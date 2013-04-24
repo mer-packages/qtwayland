@@ -159,8 +159,8 @@ int main(int argc, char *argv[])
     QmlCompositor compositor;
     compositor.setTitle(QLatin1String("QML Compositor"));
     compositor.setGeometry(0, 0, 1024, 768);
-    compositor.show();
-
+    compositor.showFullScreen();
+    
     compositor.rootContext()->setContextProperty("compositor", &compositor);
 
     QObject::connect(&compositor, SIGNAL(windowAdded(QVariant)), compositor.rootObject(), SLOT(windowAdded(QVariant)));
