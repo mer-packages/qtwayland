@@ -101,7 +101,7 @@ Item {
         enabled: true;
         NumberAnimation { easing.type: Easing.Linear; duration: 250; }
     }
-
+/*
     ContrastEffect {
         id: effect
         source: child
@@ -115,7 +115,7 @@ Item {
             NumberAnimation { easing.type: Easing.Linear; duration: 200; }
         }
     }
-
+*/
     transform: [
         Scale { id: scaleTransform; origin.x: container.width / 2; origin.y: container.height / 2; xScale: 1; yScale: 1 }
     ]
