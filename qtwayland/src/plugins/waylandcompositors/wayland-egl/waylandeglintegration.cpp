@@ -117,14 +117,13 @@ void WaylandEglIntegration::initializeHardware(QtWayland::Display *waylandDispla
     QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
     if (nativeInterface) {
         d->egl_display = nativeInterface->nativeResourceForWindow("EglDisplay", m_compositor->window());
+	if (!d->egl_display) {
+		d->egl_display = nativeInterface->nativeResourceForIntegration("EglDisplay");
+	}
         if (d->egl_display) {
             const char *extensionString = eglQueryString(d->egl_display, EGL_EXTENSIONS);
             if (extensionString && strstr(extensionString, "EGL_WL_bind_wayland_display"))
             {
-                d->get_egl_context = nativeInterface->nativeResourceFunctionForContext("get_egl_context");
-                if (!d->get_egl_context) {
-                    qWarning("Failed to retrieve the get_egl_context function");
-                }
                 d->egl_bind_wayland_display =
                         reinterpret_cast<PFNEGLBINDWAYLANDDISPLAYWL>(eglGetProcAddress("eglBindWaylandDisplayWL"));
                 d->egl_unbind_wayland_display =
@@ -137,7 +136,6 @@ void WaylandEglIntegration::initializeHardware(QtWayland::Display *waylandDispla
                         reinterpret_cast<PFNGLEGLIMAGETARGETTEXTURE2DOESPROC>(eglGetProcAddress("glEGLImageTargetTexture2DOES"));
 
                 if (d->egl_bind_wayland_display
-                        && d->get_egl_context
                         && d->egl_unbind_wayland_display
                         && d->egl_create_image
                         && d->egl_destroy_image
@@ -163,7 +161,7 @@ GLuint WaylandEglIntegration::createTextureFromBuffer(wl_buffer *buffer, QOpenGL
     }
 
     QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
-    EGLContext egl_context = d->get_egl_context(context);
+    EGLContext egl_context = nativeInterface->nativeResourceForContext("eglcontext", context);
 
     EGLImageKHR image = d->egl_create_image(d->egl_display, egl_context,
                                           EGL_WAYLAND_BUFFER_WL,
@@ -230,7 +228,7 @@ void *WaylandEglIntegration::lockNativeBuffer(struct wl_buffer *buffer, QOpenGLC
     Q_D(const WaylandEglIntegration);
 
     QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
-    EGLContext egl_context = d->get_egl_context(context);
+    EGLContext egl_context = nativeInterface->nativeResourceForContext("eglcontext", context);
 
     EGLImageKHR image = d->egl_create_image(d->egl_display, egl_context,
                                           EGL_WAYLAND_BUFFER_WL,
