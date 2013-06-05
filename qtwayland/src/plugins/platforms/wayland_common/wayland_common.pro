@@ -7,6 +7,8 @@ QT += core-private gui-private platformsupport-private
 
 include (windowmanager_integration/windowmanager_integration.pri)
 
+isEmpty(QT_WAYLAND_GL_CONFIG):QT_WAYLAND_GL_CONFIG = $$(QT_WAYLAND_GL_CONFIG)
+
 !equals(QT_WAYLAND_GL_CONFIG, nogl) {
     DEFINES += QT_WAYLAND_GL_SUPPORT
 }

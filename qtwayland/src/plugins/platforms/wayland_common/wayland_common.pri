@@ -1,6 +1,8 @@
 QT += core-private gui-private platformsupport-private
 CONFIG += link_pkgconfig qpa/genericunixfontdatabase
 
+isEmpty(QT_WAYLAND_GL_CONFIG):QT_WAYLAND_GL_CONFIG = $$(QT_WAYLAND_GL_CONFIG)
+
 !equals(QT_WAYLAND_GL_CONFIG, nogl) {
     DEFINES += QT_WAYLAND_GL_SUPPORT
 }

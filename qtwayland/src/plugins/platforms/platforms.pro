@@ -2,6 +2,8 @@ TEMPLATE=subdirs
 CONFIG+=ordered
 SUBDIRS += wayland_common
 
+isEmpty(QT_WAYLAND_GL_CONFIG):QT_WAYLAND_GL_CONFIG = $$(QT_WAYLAND_GL_CONFIG)
+
 equals(QT_WAYLAND_GL_CONFIG, nogl) {
     SUBDIRS += qwayland-nogl
 } else {
