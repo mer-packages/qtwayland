@@ -7,14 +7,7 @@ Release:    1%{?dist}
 Group:      Qt/Qt
 License:    LGPLv2.1 with exception or GPLv3
 URL:        http://qt.nokia.com
-#Source0:    %{name}-%{version}.tar.xz
-Source0:    qtwayland-opensource-src-%{_qtmodule_snapshot_version}.tar.gz
-Patch0: 0001-Add-eglfs-sanity.patch
-Patch1: 0002-Fullscreen-always.patch
-Patch2: 0003-Fixed-rendering-stalling-in-qml-compositor.patch
-Patch3: 0004-Force-glib-2.0.patch
-Patch4: 0005-Sanitize-shaders-a-bit.patch
-Patch5: fixnogl.patch
+Source0:    %{name}-%{version}.tar.bz2
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Gui)
 BuildRequires:  pkgconfig(Qt5Widgets)
@@ -73,13 +66,7 @@ This package contains the Qt wayland compositor examples for %{_qtwayland_varian
 #### Build section
 
 %prep
-%setup -q -n qtwayland-opensource-src-%{_qtmodule_snapshot_version}
-%patch0 -p1
-%patch1 -p1 
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1 
-%patch5 -p1 
+%setup -q -n %{name}-%{version}/qtwayland
 
 %build
 export QTDIR=/usr/share/qt5
