@@ -202,16 +202,16 @@ void QWaylandShmBackingStore::flush(QWindow *window, const QRegion &region, cons
         return;
     }
 
-    mFrameCallback = wl_surface_frame(waylandWindow()->wl_surface());
+    mFrameCallback = waylandWindow()->frame();
     wl_callback_add_listener(mFrameCallback,&frameCallbackListener,this);
     QMargins margins = windowDecorationMargins();
 
     bool damageAll = false;
     if (waylandWindow()->attached() != mFrontBuffer) {
         delete waylandWindow()->attached();
-        waylandWindow()->attachOffset(mFrontBuffer);
         damageAll = true;
     }
+    waylandWindow()->attachOffset(mFrontBuffer);
 
     if (damageAll) {
         //need to damage it all, otherwise the attach offset may screw up
@@ -303,7 +303,8 @@ void QWaylandShmBackingStore::done(void *data, wl_callback *callback, uint32_t t
         delete window->attached();
     }
 
-    window->attachOffset(self->mFrontBuffer);
+    if (window->attached() != self->mFrontBuffer)
+        window->attachOffset(self->mFrontBuffer);
 
     if (self->mFrontBufferIsDirty && !self->mPainting) {
         self->mFrontBufferIsDirty = false;

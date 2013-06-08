@@ -226,26 +226,10 @@ void QWaylandSurface::setSurfaceItem(QWaylandSurfaceItem *surfaceItem)
 
 qint64 QWaylandSurface::processId() const
 {
-    Q_D(const QWaylandSurface);
-    WindowManagerServerIntegration *wmIntegration = d->surface->compositor()->windowManagerIntegration();
-    if (!wmIntegration) {
-        return 0;
-    }
-
-    WaylandManagedClient *mcl = wmIntegration->managedClient(d->surface->base()->resource.client);
-    return mcl ? mcl->processId() : 0;
-}
-
-QByteArray QWaylandSurface::authenticationToken() const
-{
-    Q_D(const QWaylandSurface);
-    WindowManagerServerIntegration *wmIntegration = d->surface->compositor()->windowManagerIntegration();
-    if (!wmIntegration) {
-        return QByteArray();
-    }
-
-    WaylandManagedClient *mcl = wmIntegration->managedClient(d->surface->base()->resource.client);
-    return mcl ? mcl->authenticationToken() : QByteArray();
+    struct wl_client *client = static_cast<struct wl_client *>(this->client());
+    pid_t pid;
+    wl_client_get_credentials(client,&pid, 0,0);
+    return pid;
 }
 
 QVariantMap QWaylandSurface::windowProperties() const
@@ -341,6 +325,21 @@ bool QWaylandSurface::transientInactive() const
 {
     Q_D(const QWaylandSurface);
     return d->surface->transientInactive();
+}
+
+void QWaylandSurface::destroySurface()
+{
+    Q_D(QWaylandSurface);
+    if (d->surface->extendedSurface()) {
+        d->surface->extendedSurface()->send_close();
+    }
+}
+
+void QWaylandSurface::destroySurfaceByForce()
+{
+    Q_D(QWaylandSurface);
+   wl_resource *surface_resource = d->surface->resource()->handle;
+   wl_resource_destroy(surface_resource);
 }
 
 QT_END_NAMESPACE
