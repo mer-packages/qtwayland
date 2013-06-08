@@ -166,6 +166,11 @@ void QWindowCompositor::surfaceDamaged(const QRect &rect)
     surfaceDamaged(surface, rect);
 }
 
+void QWindowCompositor::surfacePosChanged()
+{
+    m_renderScheduler.start(0);
+}
+
 void QWindowCompositor::surfaceDamaged(QWaylandSurface *surface, const QRect &rect)
 {
     Q_UNUSED(surface)
@@ -180,6 +185,7 @@ void QWindowCompositor::surfaceCreated(QWaylandSurface *surface)
     connect(surface, SIGNAL(unmapped()), this, SLOT(surfaceUnmapped()));
     connect(surface, SIGNAL(damaged(const QRect &)), this, SLOT(surfaceDamaged(const QRect &)));
     connect(surface, SIGNAL(extendedSurfaceReady()), this, SLOT(sendExpose()));
+    connect(surface, SIGNAL(posChanged()), this, SLOT(surfacePosChanged()));
     m_renderScheduler.start(0);
 }
 
@@ -292,6 +298,8 @@ void QWindowCompositor::render()
                                   0, false, true);
 
     foreach (QWaylandSurface *surface, m_surfaces) {
+        if (!surface->visible())
+            continue;
         GLuint texture = composeSurface(surface);
         QRect geo(surface->pos().toPoint(),surface->size());
         m_textureBlitter->drawTexture(texture,geo,m_window->size(),0,false,surface->isYInverted());
