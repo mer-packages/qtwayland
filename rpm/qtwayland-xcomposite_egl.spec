@@ -128,6 +128,7 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %{_libdir}/pkgconfig/Qt5Compositor.pc
 %{_libdir}/cmake/Qt5Compositor/*
 %{_datadir}/qt5/mkspecs/modules/qt_lib_compositor.pri
+%{_libdir}/qt5/bin/qtwaylandscanner
 
 %files examples
 %defattr(-,root,root,-)
