@@ -16,9 +16,9 @@ config_xkbcommon {
 }
 
 !contains(QT_CONFIG, no-pkg-config) {
-    PKGCONFIG += wayland-client wayland-cursor
+    PKGCONFIG += wayland-client wayland-cursor glib-2.0
 } else {
-    LIBS += -lwayland-client -lwayland-cursor
+    LIBS += -lwayland-client -lwayland-cursor -lglib2.0
 }
 
 INCLUDEPATH += $$PWD/../../../shared
