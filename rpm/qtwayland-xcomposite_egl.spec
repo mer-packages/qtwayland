@@ -32,6 +32,8 @@ BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  libffi-devel
 BuildRequires:  fdupes
 
+Requires:       xkeyboard-config
+
 %description
 Qt is a cross-platform application and UI framework. Using Qt, you can
 write web-enabled applications once and deploy them across desktop,
