@@ -172,11 +172,13 @@ void QWaylandShmBackingStore::beginPaint(const QRegion &)
         waylandWindow->waitForFrameSync();
     }
 
+    waylandWindow()->setCanResize(false);
 }
 
 void QWaylandShmBackingStore::endPaint()
 {
     mPainting = false;
+    waylandWindow()->setCanResize(true);
 }
 
 void QWaylandShmBackingStore::ensureSize()
@@ -225,7 +227,6 @@ void QWaylandShmBackingStore::flush(QWindow *window, const QRegion &region, cons
         }
     }
     mFrontBufferIsDirty = false;
-    waylandWindow()->doResize();
 }
 
 void QWaylandShmBackingStore::resize(const QSize &size, const QRegion &)
