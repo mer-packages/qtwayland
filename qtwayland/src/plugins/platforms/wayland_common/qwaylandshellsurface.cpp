@@ -132,20 +132,10 @@ void QWaylandShellSurface::updateTransientParent(QWindow *parent)
             || wf.testFlag(Qt::WindowTransparentForInput))
         flags |= WL_SHELL_SURFACE_TRANSIENT_INACTIVE;
 
-    set_transient(parent_wayland_window->wl_surface(),
+    set_transient(parent_wayland_window->object(),
                   transientPos.x(),
                   transientPos.y(),
                   flags);
-}
-
-void QWaylandShellSurface::setClassName(const char *className)
-{
-    set_class(className);
-}
-
-void QWaylandShellSurface::setTitle(const char *title)
-{
-    set_title(title);
 }
 
 void QWaylandShellSurface::shell_surface_ping(uint32_t serial)
