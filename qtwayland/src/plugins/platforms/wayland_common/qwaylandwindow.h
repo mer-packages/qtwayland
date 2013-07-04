@@ -158,8 +158,10 @@ public:
     inline bool isFullscreen() const { return mState == Qt::WindowFullScreen; }
 
     QMutex *resizeMutex() { return &mResizeLock; }
-public slots:
     void doResize();
+    void setCanResize(bool canResize);
+public slots:
+    void requestResize();
 
 protected:
     QWaylandDisplay *mDisplay;
@@ -179,7 +181,8 @@ protected:
 
     QMutex mResizeLock;
     QWaylandWindowConfigure mConfigure;
-    bool mResizeExposedSent;
+    bool mRequestResizeSent;
+    bool mCanResize;
 
     bool mSentInitialResize;
     QPoint mOffset;
