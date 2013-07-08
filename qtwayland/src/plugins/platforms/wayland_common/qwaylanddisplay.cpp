@@ -162,13 +162,21 @@ QWaylandDisplay::~QWaylandDisplay(void)
 
 void QWaylandDisplay::flushRequests()
 {
-    wl_display_dispatch_queue_pending(mDisplay, mEventQueue);
+    int ret = wl_display_dispatch_queue_pending(mDisplay, mEventQueue);
+    if (ret < 0) {
+        qWarning("The wayland connection broke (error %d). Did the wayland compositor die?", errno);
+        exit(1);
+    }
     wl_display_flush(mDisplay);
 }
 
 void QWaylandDisplay::blockingReadEvents()
 {
-    wl_display_dispatch_queue(mDisplay, mEventQueue);
+    int ret = wl_display_dispatch_queue(mDisplay, mEventQueue);
+    if (ret < 0) {
+        qWarning("The wayland connection broke (error %d). Did the wayland compositor die?", errno);
+        exit(1);
+    }
 }
 
 QWaylandScreen *QWaylandDisplay::screenForOutput(struct wl_output *output) const
