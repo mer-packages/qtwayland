@@ -29,7 +29,10 @@ void QWaylandEventThread::displayConnect()
 
 void QWaylandEventThread::readWaylandEvents()
 {
-    wl_display_dispatch(m_display);
+    if (wl_display_dispatch(m_display) < 0) {
+        qWarning("The wayland connection broke (error %d). Did the wayland compositor die?", errno);
+        exit(1);
+    }
     emit newEventsRead();
 }
 
