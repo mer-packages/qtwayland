@@ -69,6 +69,20 @@
 #endif
 
 
+class GenericWaylandTheme: public QGenericUnixTheme
+{
+public:
+    QVariant themeHint(ThemeHint hint) const
+    {
+        if (hint == QPlatformTheme::PasswordMaskDelay) {
+            return QVariant(1000);
+        }
+
+        return QGenericUnixTheme::themeHint(hint);
+    }
+};
+
+
 QT_USE_NAMESPACE
 
 QWaylandIntegration::QWaylandIntegration()
@@ -205,10 +219,14 @@ QWaylandDisplay *QWaylandIntegration::display() const
 
 QStringList QWaylandIntegration::themeNames() const
 {
-    return QGenericUnixTheme::themeNames();
+    return QStringList("generic_wayland");
 }
 
 QPlatformTheme *QWaylandIntegration::createPlatformTheme(const QString &name) const
 {
-    return QGenericUnixTheme::createUnixTheme(name);
+    if (name == "generic_wayland") {
+        return new GenericWaylandTheme;
+    }
+
+    return 0;
 }
