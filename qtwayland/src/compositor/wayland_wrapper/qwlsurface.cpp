@@ -230,6 +230,19 @@ void Surface::releasedTexture(GLuint id)
     }
 }
 
+void Surface::releasedImage(QImage img)
+{
+   int i;
+
+   for (i = 0; i < Surface::buffer_pool_size; i++) {
+        if (m_bufferPool[i]->image() == img) {
+		m_bufferPool[i]->disown();
+		break;
+        }
+    }
+}
+
+
 void Surface::sendFrameCallback()
 {
     SurfaceBuffer *surfacebuffer = currentSurfaceBuffer();

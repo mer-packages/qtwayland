@@ -160,6 +160,7 @@ public:
     Q_INVOKABLE void destroySurface();
     Q_INVOKABLE void destroySurfaceByForce();
     void releasedTexture(GLuint id);
+    void releasedImage(QImage image);
 signals:
     void mapped();
     void unmapped();

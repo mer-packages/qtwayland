@@ -75,6 +75,7 @@ public:
 
     bool smooth;
     QSGTexture *t;
+    QImage image;
 
 public slots:
     void invalidate()
@@ -377,12 +378,19 @@ void QWaylandSurfaceItem::updateTexture()
         }
 
 	/* We need to signal to the surface/surfacebuffer that we've released the texture so they also can release the buffer */
-	if (oldTexture)
+	if (oldTexture && m_surface->type() == QWaylandSurface::Texture)
 		m_surface->releasedTexture(oldTexture->textureId());
+	if (oldTexture && m_surface->type() == QWaylandSurface::Shm)
+		m_surface->releasedImage(m_provider->image);
 
         texture->bind();
         delete oldTexture;
     }
+
+    if (m_surface->type() == QWaylandSurface::Shm)
+	m_provider->image = m_surface->image();
+    else
+	m_provider->image = QImage();
 
     m_provider->t = texture;
     emit m_provider->textureChanged();

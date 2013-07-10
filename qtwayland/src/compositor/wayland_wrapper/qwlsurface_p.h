@@ -108,6 +108,7 @@ public:
 #endif
 
     void releasedTexture(GLuint id);
+    void releasedImage(QImage img);
     void sendFrameCallback();
 
     void frameFinished();
