@@ -375,6 +375,11 @@ void QWaylandSurfaceItem::updateTexture()
         } else {
             texture = window()->createTextureFromImage(m_surface->image());
         }
+
+	/* We need to signal to the surface/surfacebuffer that we've released the texture so they also can release the buffer */
+	if (oldTexture)
+		m_surface->releasedTexture(oldTexture->textureId());
+
         texture->bind();
         delete oldTexture;
     }

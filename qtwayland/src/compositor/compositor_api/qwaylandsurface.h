@@ -159,6 +159,7 @@ public:
 
     Q_INVOKABLE void destroySurface();
     Q_INVOKABLE void destroySurfaceByForce();
+    void releasedTexture(GLuint id);
 signals:
     void mapped();
     void unmapped();

@@ -107,6 +107,7 @@ public:
     GLuint textureId(QOpenGLContext *context) const;
 #endif
 
+    void releasedTexture(GLuint id);
     void sendFrameCallback();
 
     void frameFinished();
