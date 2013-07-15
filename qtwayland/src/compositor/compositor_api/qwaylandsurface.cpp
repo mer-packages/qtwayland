@@ -288,13 +288,6 @@ void QWaylandSurface::releasedTexture(GLuint id)
    d->surface->releasedTexture(id);
 }
 
-void QWaylandSurface::releasedImage(QImage image)
-{
-   Q_D(QWaylandSurface);
-   d->surface->releasedImage(image);
-}
-
-
 QWaylandSurface *QWaylandSurface::transientParent() const
 {
     Q_D(const QWaylandSurface);
