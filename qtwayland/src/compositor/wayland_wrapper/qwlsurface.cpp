@@ -216,25 +216,13 @@ GLuint Surface::textureId(QOpenGLContext *context) const
 }
 #endif // QT_COMPOSITOR_WAYLAND_GL
 
-void Surface::releasedTexture(GLuint id)
-{
-   int i;
-   if (id == 0)
-	return;
-
-   for (i = 0; i < Surface::buffer_pool_size; i++) {
-        if (m_bufferPool[i]->texture() == id) {
-		m_bufferPool[i]->disown();
-		break;
-        }
-    }
-}
-
 void Surface::sendFrameCallback()
 {
     SurfaceBuffer *surfacebuffer = currentSurfaceBuffer();
     surfacebuffer->setDisplayed();
     if (m_backBuffer) {
+        if (m_frontBuffer)
+            m_frontBuffer->disown();
         m_frontBuffer = m_backBuffer;
     }
 

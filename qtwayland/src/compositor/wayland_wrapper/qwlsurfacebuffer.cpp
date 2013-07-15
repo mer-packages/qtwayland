@@ -168,7 +168,7 @@ void SurfaceBuffer::disown()
     m_surface_has_buffer = false;
 
     if (!m_page_flipper_has_buffer) {
-        release();
+        destructBufferState();
     }
 }
 

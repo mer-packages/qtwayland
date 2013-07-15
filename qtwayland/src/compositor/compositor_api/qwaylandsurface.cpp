@@ -282,12 +282,6 @@ void QWaylandSurface::frameFinished()
     d->surface->frameFinished();
 }
 
-void QWaylandSurface::releasedTexture(GLuint id)
-{
-   Q_D(QWaylandSurface);
-   d->surface->releasedTexture(id);
-}
-
 QWaylandSurface *QWaylandSurface::transientParent() const
 {
     Q_D(const QWaylandSurface);
