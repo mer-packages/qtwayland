@@ -62,6 +62,7 @@
 #include "qwaylandqtkey.h"
 
 #include <QtCore/QAbstractEventDispatcher>
+#include <QtCore/QCoreApplication>
 #include <QtGui/private/qguiapplication_p.h>
 
 #include <QtCore/QDebug>
@@ -165,7 +166,7 @@ void QWaylandDisplay::flushRequests()
     int ret = wl_display_dispatch_queue_pending(mDisplay, mEventQueue);
     if (ret < 0) {
         qWarning("The wayland connection broke (error %d). Did the wayland compositor die?", errno);
-        exit(1);
+        QCoreApplication::exit(1);
     }
     wl_display_flush(mDisplay);
 }
@@ -175,7 +176,7 @@ void QWaylandDisplay::blockingReadEvents()
     int ret = wl_display_dispatch_queue(mDisplay, mEventQueue);
     if (ret < 0) {
         qWarning("The wayland connection broke (error %d). Did the wayland compositor die?", errno);
-        exit(1);
+        QCoreApplication::exit(1);
     }
 }
 
