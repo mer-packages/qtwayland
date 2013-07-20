@@ -2,7 +2,7 @@
 %define _qtwayland_variant wayland_egl
 Name:       qt5-qtwayland-%{_qtwayland_variant}
 Summary:    Qt Wayland compositor, %{_qtwayland_variant} variant
-Version:    0.0~git855.e5601d283c
+Version:    0.0git855.e5601d283c
 Release:    1%{?dist}
 Group:      Qt/Qt
 License:    LGPLv2.1 with exception or GPLv3
@@ -22,9 +22,6 @@ BuildRequires:  pkgconfig(Qt5DBus)
 BuildRequires:  pkgconfig(wayland-client)
 %if "%{_qtwayland_variant}" == "wayland_egl"
 BuildRequires:  pkgconfig(wayland-egl)
-%endif
-%if "%{_qtwayland_variant}" == "xcomposite_egl"
-BuildRequires:  pkgconfig(xcomposite)
 %endif
 
 BuildRequires:  libxkbcommon-devel
