@@ -74,7 +74,7 @@ export QT_WAYLAND_GL_CONFIG=%{_qtwayland_variant}
 touch .git
 qmake -qt=5 "QT_BUILD_PARTS += examples" "CONFIG += wayland-compositor" 
 
-make %{?_smp_flags}
+make %{?_smp_mflags}
 
 %install
 rm -rf %{buildroot}
