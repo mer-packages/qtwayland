@@ -184,7 +184,6 @@ QWaylandSurface::WindowFlags QWaylandSurface::windowFlags() const
     return d->surface->extendedSurface()->windowFlags();
 }
 
-
 QImage QWaylandSurface::image() const
 {
     Q_D(const QWaylandSurface);
@@ -290,11 +289,25 @@ QWaylandSurface *QWaylandSurface::transientParent() const
     return 0;
 }
 
-void QWaylandSurface::sendOnScreenVisibilityChange(bool visible)
+QWindow::Visibility QWaylandSurface::visibility() const
+{
+    Q_D(const QWaylandSurface);
+    if (d->surface->extendedSurface())
+        return d->surface->extendedSurface()->visibility();
+
+    return QWindow::AutomaticVisibility;
+}
+
+void QWaylandSurface::setVisibility(QWindow::Visibility visibility)
 {
     Q_D(QWaylandSurface);
     if (d->surface->extendedSurface())
-        d->surface->extendedSurface()->sendOnScreenVisibility(visible);
+        d->surface->extendedSurface()->setVisibility(visibility);
+}
+
+void QWaylandSurface::sendOnScreenVisibilityChange(bool visible)
+{
+    setVisibility(visible ? QWindow::AutomaticVisibility : QWindow::Hidden);
 }
 
 QString QWaylandSurface::className() const

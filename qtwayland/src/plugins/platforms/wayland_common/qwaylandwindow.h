@@ -136,8 +136,6 @@ public:
     void raise();
     void lower();
 
-    bool isExposed() const;
-
     QWaylandDecoration *decoration() const;
     void setDecoration(QWaylandDecoration *decoration);
 
