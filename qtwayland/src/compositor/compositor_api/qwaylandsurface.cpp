@@ -345,6 +345,8 @@ void QWaylandSurface::destroySurface()
     Q_D(QWaylandSurface);
     if (d->surface->extendedSurface()) {
         d->surface->extendedSurface()->send_close();
+    } else {
+        destroySurfaceByForce();
     }
 }
 
