@@ -92,7 +92,7 @@ QWaylandSurface::QWaylandSurface(QtWayland::Surface *surface)
 WaylandClient *QWaylandSurface::client() const
 {
     Q_D(const QWaylandSurface);
-    return d->surface->base()->resource.client;
+    return d->surface->resource()->client();
 }
 
 QWaylandSurface *QWaylandSurface::parentSurface() const
@@ -290,11 +290,25 @@ QWaylandSurface *QWaylandSurface::transientParent() const
     return 0;
 }
 
-void QWaylandSurface::sendOnScreenVisibilityChange(bool visible)
+QWindow::Visibility QWaylandSurface::visibility() const
+{
+    Q_D(const QWaylandSurface);
+    if (d->surface->extendedSurface())
+        return d->surface->extendedSurface()->visibility();
+
+    return QWindow::AutomaticVisibility;
+}
+
+void QWaylandSurface::setVisibility(QWindow::Visibility visibility)
 {
     Q_D(QWaylandSurface);
     if (d->surface->extendedSurface())
-        d->surface->extendedSurface()->sendOnScreenVisibility(visible);
+        d->surface->extendedSurface()->setVisibility(visibility);
+}
+
+void QWaylandSurface::sendOnScreenVisibilityChange(bool visible)
+{
+    setVisibility(visible ? QWindow::AutomaticVisibility : QWindow::Hidden);
 }
 
 QString QWaylandSurface::className() const
@@ -332,6 +346,8 @@ void QWaylandSurface::destroySurface()
     Q_D(QWaylandSurface);
     if (d->surface->extendedSurface()) {
         d->surface->extendedSurface()->send_close();
+    } else {
+        destroySurfaceByForce();
     }
 }
 

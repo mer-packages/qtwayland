@@ -133,7 +133,8 @@ public:
     void setWindowState(Qt::WindowState state);
     void setWindowFlags(Qt::WindowFlags flags);
 
-    bool isExposed() const;
+    void raise() Q_DECL_OVERRIDE;
+    void lower() Q_DECL_OVERRIDE;
 
     QWaylandDecoration *decoration() const;
     void setDecoration(QWaylandDecoration *decoration);
@@ -153,11 +154,17 @@ public:
     inline bool isMaximized() const { return mState == Qt::WindowMaximized; }
     inline bool isFullscreen() const { return mState == Qt::WindowFullScreen; }
 
+    void setMouseCursor(QWaylandInputDevice *device, Qt::CursorShape shape);
+    void restoreMouseCursor(QWaylandInputDevice *device);
+
     QMutex *resizeMutex() { return &mResizeLock; }
-public slots:
     void doResize();
+    void setCanResize(bool canResize);
+public slots:
+    void requestResize();
 
 protected:
+    QWaylandScreen *mScreen;
     QWaylandDisplay *mDisplay;
     QWaylandShellSurface *mShellSurface;
     QWaylandExtendedSurface *mExtendedWindow;
@@ -166,6 +173,7 @@ protected:
     QWaylandDecoration *mWindowDecoration;
     bool mMouseEventsInContentArea;
     Qt::MouseButtons mMousePressedInContentArea;
+    Qt::CursorShape m_cursorShape;
 
     QWaylandBuffer *mBuffer;
     WId mWindowId;
@@ -175,7 +183,8 @@ protected:
 
     QMutex mResizeLock;
     QWaylandWindowConfigure mConfigure;
-    bool mResizeExposedSent;
+    bool mRequestResizeSent;
+    bool mCanResize;
 
     bool mSentInitialResize;
     QPoint mOffset;

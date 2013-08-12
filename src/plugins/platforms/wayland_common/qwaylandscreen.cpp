@@ -47,7 +47,7 @@
 
 #include <qpa/qwindowsysteminterface.h>
 
-QT_USE_NAMESPACE
+QT_BEGIN_NAMESPACE
 
 QWaylandScreen::QWaylandScreen(QWaylandDisplay *waylandDisplay, uint32_t id)
     : QtWayland::wl_output(waylandDisplay->wl_registry(), id)
@@ -56,6 +56,7 @@ QWaylandScreen::QWaylandScreen(QWaylandDisplay *waylandDisplay, uint32_t id)
     , mDepth(32)
     , mRefreshRate(60000)
     , mFormat(QImage::Format_ARGB32_Premultiplied)
+    , mOutputName(QStringLiteral("Screen%1").arg(id))
     , mWaylandCursor(new QWaylandCursor(this))
 {
     // handle case of output extension global being sent after outputs
@@ -156,8 +157,10 @@ void QWaylandScreen::output_geometry(int32_t x, int32_t y,
 {
     Q_UNUSED(subpixel);
     Q_UNUSED(make);
-    Q_UNUSED(model);
     Q_UNUSED(transform);
+
+    if (!model.isEmpty())
+        mOutputName = model;
 
     QRect geom(x, y, width, height);
 
@@ -168,3 +171,5 @@ void QWaylandScreen::output_geometry(int32_t x, int32_t y,
     QWindowSystemInterface::handleScreenGeometryChange(screen(), mGeometry);
     QWindowSystemInterface::handleScreenAvailableGeometryChange(screen(), mGeometry);
 }
+
+QT_END_NAMESPACE
