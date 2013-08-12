@@ -69,6 +69,8 @@
 #endif
 
 
+QT_BEGIN_NAMESPACE
+
 class GenericWaylandTheme: public QGenericUnixTheme
 {
 public:
@@ -81,9 +83,6 @@ public:
         return QGenericUnixTheme::themeHint(hint);
     }
 };
-
-
-QT_USE_NAMESPACE
 
 QWaylandIntegration::QWaylandIntegration()
     : mFontDb(new QGenericUnixFontDatabase())
@@ -230,3 +229,5 @@ QPlatformTheme *QWaylandIntegration::createPlatformTheme(const QString &name) co
 
     return 0;
 }
+
+QT_END_NAMESPACE
