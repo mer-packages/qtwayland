@@ -202,8 +202,8 @@ void QWaylandSurfaceItem::mousePressEvent(QMouseEvent *event)
     if (m_surface) {
         QWaylandInputDevice *inputDevice = m_surface->compositor()->defaultInputDevice();
         if (inputDevice->mouseFocus() != m_surface)
-            inputDevice->setMouseFocus(m_surface, event->pos(), event->globalPos());
-        inputDevice->sendMousePressEvent(event->button(), toSurface(event->pos()), event->globalPos());
+            inputDevice->setMouseFocus(m_surface, event->localPos(), event->windowPos());
+        inputDevice->sendMousePressEvent(event->button(), event->localPos(), event->windowPos());
     }
 }
 
@@ -211,7 +211,7 @@ void QWaylandSurfaceItem::mouseMoveEvent(QMouseEvent *event)
 {
     if (m_surface){
         QWaylandInputDevice *inputDevice = m_surface->compositor()->defaultInputDevice();
-        inputDevice->sendMouseMoveEvent(m_surface, toSurface(event->pos()), event->globalPos());
+        inputDevice->sendMouseMoveEvent(m_surface, event->localPos(), event->windowPos());
     }
 }
 
@@ -219,7 +219,7 @@ void QWaylandSurfaceItem::mouseReleaseEvent(QMouseEvent *event)
 {
     if (m_surface){
         QWaylandInputDevice *inputDevice = m_surface->compositor()->defaultInputDevice();
-        inputDevice->sendMouseReleaseEvent(event->button(), toSurface(event->pos()), event->globalPos());
+        inputDevice->sendMouseReleaseEvent(event->button(), event->localPos(), event->windowPos());
     }
 }
 
@@ -273,11 +273,6 @@ void QWaylandSurfaceItem::takeFocus()
         QWaylandInputDevice *inputDevice = m_surface->compositor()->defaultInputDevice();
         inputDevice->setKeyboardFocus(m_surface);
     }
-}
-
-QPoint QWaylandSurfaceItem::toSurface(const QPointF &pos) const
-{
-    return pos.toPoint();
 }
 
 void QWaylandSurfaceItem::surfaceMapped()
@@ -454,6 +449,6 @@ void QWaylandSurfaceItem::setResizeSurfaceToItem(bool enabled)
     }
 }
 
-#include "qwaylandsurfaceitem.moc"
-
 QT_END_NAMESPACE
+
+#include "qwaylandsurfaceitem.moc"

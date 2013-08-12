@@ -320,4 +320,3 @@ const struct wl_callback_listener QWaylandShmBackingStore::frameCallbackListener
 };
 
 QT_END_NAMESPACE
-
