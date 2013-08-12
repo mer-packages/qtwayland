@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <errno.h>
 
+QT_BEGIN_NAMESPACE
+
 QWaylandEventThread::QWaylandEventThread(QObject *parent)
     : QObject(parent)
     , m_display(0)
@@ -57,3 +59,5 @@ wl_display *QWaylandEventThread::display() const
     QMutexLocker displayLock(m_displayLock);
     return m_display;
 }
+
+QT_END_NAMESPACE

@@ -169,12 +169,12 @@ void ExtendedSurface::extended_surface_destroy_resource(Resource *)
 
 void ExtendedSurface::extended_surface_raise(Resource *)
 {
-    m_surface->waylandSurface()->raiseRequested();
+    emit m_surface->waylandSurface()->raiseRequested();
 }
 
 void ExtendedSurface::extended_surface_lower(Resource *)
 {
-    m_surface->waylandSurface()->lowerRequested();
+    emit m_surface->waylandSurface()->lowerRequested();
 }
 
 }

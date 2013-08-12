@@ -54,17 +54,18 @@
 #include <QtCore/QFileInfo>
 #include <QtGui/QWindow>
 
-#include <QCoreApplication>
+#include <QGuiApplication>
 #include <qpa/qwindowsysteminterface.h>
 
 #include <QtCore/QDebug>
 
-QT_USE_NAMESPACE
+QT_BEGIN_NAMESPACE
 
 QWaylandWindow::QWaylandWindow(QWindow *window)
     : QObject()
     , QPlatformWindow(window)
-    , mDisplay(QWaylandScreen::waylandScreenFromWindow(window)->display())
+    , mScreen(QWaylandScreen::waylandScreenFromWindow(window))
+    , mDisplay(mScreen->display())
     , mShellSurface(0)
     , mExtendedWindow(0)
     , mSubSurfaceWindow(0)
@@ -123,6 +124,12 @@ QWaylandWindow::~QWaylandWindow()
     QList<QWaylandInputDevice *> inputDevices = mDisplay->inputDevices();
     for (int i = 0; i < inputDevices.size(); ++i)
         inputDevices.at(i)->handleWindowDestroyed(this);
+
+    const QWindow *parent = window();
+    foreach (QWindow *w, QGuiApplication::topLevelWindows()) {
+        if (w->transientParent() == parent)
+            QWindowSystemInterface::handleCloseEvent(w);
+    }
 }
 
 QWaylandWindow *QWaylandWindow::fromWlSurface(::wl_surface *surface)
@@ -220,6 +227,9 @@ void QWaylandWindow::configure(uint32_t edges, int32_t width, int32_t height)
         mRequestResizeSent= true;
         QMetaObject::invokeMethod(this, "requestResize", Qt::QueuedConnection);
     }
+
+    QWindowSystemInterface::handleWindowStateChanged(window(), mState);
+    QWindowSystemInterface::flushWindowSystemEvents(); // Required for oldState to work on WindowStateChanged
 }
 
 void QWaylandWindow::doResize()
@@ -461,11 +471,12 @@ void QWaylandWindow::handleMouse(QWaylandInputDevice *inputDevice, ulong timesta
     QWindowSystemInterface::handleMouseEvent(window(),timestamp,local,global,b,mods);
 }
 
-void QWaylandWindow::handleMouseEnter(QWaylandInputDevice *)
+void QWaylandWindow::handleMouseEnter(QWaylandInputDevice *inputDevice)
 {
     if (!mWindowDecoration) {
         QWindowSystemInterface::handleEnterEvent(window());
     }
+    restoreMouseCursor(inputDevice);
 }
 
 void QWaylandWindow::handleMouseLeave(QWaylandInputDevice *inputDevice)
@@ -474,10 +485,10 @@ void QWaylandWindow::handleMouseLeave(QWaylandInputDevice *inputDevice)
         if (mMouseEventsInContentArea) {
             QWindowSystemInterface::handleLeaveEvent(window());
         }
-        mWindowDecoration->restoreMouseCursor(inputDevice);
     } else {
         QWindowSystemInterface::handleLeaveEvent(window());
     }
+    restoreMouseCursor(inputDevice);
 }
 
 void QWaylandWindow::handleMouseEventWithDecoration(QWaylandInputDevice *inputDevice, ulong timestamp, const QPointF &local, const QPointF &global, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
@@ -498,7 +509,7 @@ void QWaylandWindow::handleMouseEventWithDecoration(QWaylandInputDevice *inputDe
         globalTranslated.setX(globalTranslated.x() - marg.left());
         globalTranslated.setY(globalTranslated.y() - marg.top());
         if (!mMouseEventsInContentArea) {
-            mWindowDecoration->restoreMouseCursor(inputDevice);
+            restoreMouseCursor(inputDevice);
             QWindowSystemInterface::handleEnterEvent(window());
         }
         QWindowSystemInterface::handleMouseEvent(window(), timestamp, localTranslated, globalTranslated, b, mods);
@@ -512,3 +523,18 @@ void QWaylandWindow::handleMouseEventWithDecoration(QWaylandInputDevice *inputDe
         mWindowDecoration->handleMouse(inputDevice,local,global,b,mods);
     }
 }
+
+void QWaylandWindow::setMouseCursor(QWaylandInputDevice *device, Qt::CursorShape shape)
+{
+    if (m_cursorShape != shape || device->serial() > device->cursorSerial()) {
+        device->setCursor(shape, mScreen);
+        m_cursorShape = shape;
+    }
+}
+
+void QWaylandWindow::restoreMouseCursor(QWaylandInputDevice *device)
+{
+    setMouseCursor(device, window()->cursor().shape());
+}
+
+QT_END_NAMESPACE

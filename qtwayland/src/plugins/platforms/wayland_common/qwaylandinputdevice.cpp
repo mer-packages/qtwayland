@@ -65,12 +65,13 @@
 #include <X11/keysym.h>
 #endif
 
-QT_USE_NAMESPACE
+QT_BEGIN_NAMESPACE
 
 QWaylandInputDevice::QWaylandInputDevice(QWaylandDisplay *display, uint32_t id)
     : QtWayland::wl_seat(display->wl_registry(), id)
     , mQDisplay(display)
     , mDisplay(display->wl_display())
+    , mFocusCallback(0)
     , mCaps(0)
     , mTransferDevice(0)
     , mPointerFocus(0)
@@ -212,13 +213,14 @@ void QWaylandInputDevice::pointer_enter(uint32_t serial, struct wl_surface *surf
     QWaylandWindow *window = QWaylandWindow::fromWlSurface(surface);
     window->window()->setCursor(window->window()->cursor());
 
-    window->handleMouseEnter(this);
-    window->handleMouse(this, mTime, mSurfacePos, mGlobalPos, mButtons, Qt::NoModifier);
     mPointerFocus = window;
 
     mTime = QWaylandDisplay::currentTimeMillisec();
     mSerial = serial;
     mEnterSerial = serial;
+
+    window->handleMouseEnter(this);
+    window->handleMouse(this, mTime, mSurfacePos, mGlobalPos, mButtons, Qt::NoModifier);
 }
 
 void QWaylandInputDevice::pointer_leave(uint32_t time, struct wl_surface *surface)
@@ -455,10 +457,14 @@ void QWaylandInputDevice::keyboard_enter(uint32_t time, struct wl_surface *surfa
     if (!surface)
         return;
 
+
     QWaylandWindow *window = QWaylandWindow::fromWlSurface(surface);
     mKeyboardFocus = window;
-    mQDisplay->setLastKeyboardFocusInputDevice(this);
-    QWindowSystemInterface::handleWindowActivated(window->window());
+
+    if (!mFocusCallback) {
+        mFocusCallback = wl_display_sync(mDisplay);
+        wl_callback_add_listener(mFocusCallback, &QWaylandInputDevice::callback, this);
+    }
 }
 
 void QWaylandInputDevice::keyboard_leave(uint32_t time, struct wl_surface *surface)
@@ -467,8 +473,32 @@ void QWaylandInputDevice::keyboard_leave(uint32_t time, struct wl_surface *surfa
     Q_UNUSED(surface);
 
     mKeyboardFocus = NULL;
-    mQDisplay->setLastKeyboardFocusInputDevice(0);
-    QWindowSystemInterface::handleWindowActivated(0);
+
+    // Use a callback to set the focus because we may get a leave/enter pair, and
+    // the latter one would be lost in the QWindowSystemInterface queue, if
+    // we issue the handleWindowActivated() calls immediately.
+    if (!mFocusCallback) {
+        mFocusCallback = wl_display_sync(mDisplay);
+        wl_callback_add_listener(mFocusCallback, &QWaylandInputDevice::callback, this);
+    }
+}
+
+const wl_callback_listener QWaylandInputDevice::callback = {
+    QWaylandInputDevice::focusCallback
+};
+
+void QWaylandInputDevice::focusCallback(void *data, struct wl_callback *callback, uint32_t time)
+{
+    Q_UNUSED(time);
+    Q_UNUSED(callback);
+    QWaylandInputDevice *self = static_cast<QWaylandInputDevice *>(data);
+    if (self->mFocusCallback) {
+        wl_callback_destroy(self->mFocusCallback);
+        self->mFocusCallback = 0;
+    }
+
+    self->mQDisplay->setLastKeyboardFocusInputDevice(self->mKeyboardFocus ? self : 0);
+    QWindowSystemInterface::handleWindowActivated(self->mKeyboardFocus ? self->mKeyboardFocus->window() : 0);
 }
 
 void QWaylandInputDevice::keyboard_key(uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
@@ -642,7 +672,9 @@ void QWaylandInputDevice::touch_frame()
         return;
     }
 
-    QWindowSystemInterface::handleTouchEvent(0, mTouchDevice, mTouchPoints);
+    QWindow *window = mTouchFocus ? mTouchFocus->window() : 0;
+
+    QWindowSystemInterface::handleTouchEvent(window, mTouchDevice, mTouchPoints);
 
     bool allReleased = true;
     for (int i = 0; i < mTouchPoints.count(); ++i)
@@ -655,7 +687,9 @@ void QWaylandInputDevice::touch_frame()
     mTouchPoints.clear();
 
     if (allReleased) {
-        QWindowSystemInterface::handleTouchEvent(0, mTouchDevice, mTouchPoints);
+        QWindowSystemInterface::handleTouchEvent(window, mTouchDevice, mTouchPoints);
         mPrevTouchPoints.clear();
     }
 }
+
+QT_END_NAMESPACE

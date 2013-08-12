@@ -38,32 +38,44 @@
 **
 ****************************************************************************/
 
-#include "xcompositebuffer.h"
+#ifndef WLTOUCH_H
+#define WLTOUCH_H
+
+#include <private/qwlcompositor_p.h>
+#include "qwayland-server-touch-extension.h"
+#include "wayland-util.h"
 
 QT_BEGIN_NAMESPACE
 
-XCompositeBuffer::XCompositeBuffer(Window window, const QSize &size,
-                                   struct ::wl_client *client, uint32_t id)
-    : QtWaylandServer::wl_buffer(client, id)
-    , mWindow(window)
-    , mInvertedY(false)
-    , mSize(size)
-{
-}
+class Compositor;
+class Surface;
+class QTouchEvent;
 
-void XCompositeBuffer::buffer_destroy_resource(Resource *)
-{
-    delete this;
-}
+namespace QtWayland {
 
-void XCompositeBuffer::buffer_destroy(Resource *resource)
+class TouchExtensionGlobal : public QtWaylandServer::qt_touch_extension
 {
-    wl_resource_destroy(resource->handle);
-}
+public:
+    TouchExtensionGlobal(Compositor *compositor);
+    ~TouchExtensionGlobal();
 
-Window XCompositeBuffer::window()
-{
-    return mWindow;
+    bool postTouchEvent(QTouchEvent *event, Surface *surface);
+
+    void setFlags(int flags) { m_flags = flags; }
+
+protected:
+    void touch_extension_bind_resource(Resource *resource) Q_DECL_OVERRIDE;
+    void touch_extension_destroy_resource(Resource *resource) Q_DECL_OVERRIDE;
+
+private:
+    Compositor *m_compositor;
+    int m_flags;
+    QList<Resource *> m_resources;
+    QVector<float> m_posData;
+};
+
 }
 
 QT_END_NAMESPACE
+
+#endif // WLTOUCH_H

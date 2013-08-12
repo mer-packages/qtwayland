@@ -51,10 +51,11 @@
 #include "qwlextendedsurface_p.h"
 #include "qwlsubsurface_p.h"
 #include "qwlshellsurface_p.h"
-#include "qwltouch_p.h"
+#include "qwlqttouch_p.h"
 #include "qwlqtkey_p.h"
 #include "qwlinputdevice_p.h"
 #include "qwlregion_p.h"
+#include "qwlpointer_p.h"
 
 #include <QWindow>
 #include <QSocketNotifier>
@@ -262,36 +263,6 @@ void Compositor::createSurface(struct wl_client *client, uint32_t id)
     m_qt_compositor->surfaceCreated(surface->waylandSurface());
 }
 
-struct wl_client *Compositor::getClientFromWinId(uint winId) const
-{
-    Surface *surface = getSurfaceFromWinId(winId);
-    if (surface)
-        return surface->resource()->client();
-
-    return 0;
-}
-
-Surface *Compositor::getSurfaceFromWinId(uint winId) const
-{
-    foreach (Surface *surface, m_surfaces) {
-        if (surface->id() == winId)
-            return surface;
-    }
-
-    return 0;
-}
-
-QImage Compositor::image(uint winId) const
-{
-    foreach (Surface *surface, m_surfaces) {
-        if (surface->id() == winId) {
-            return surface->image();
-        }
-    }
-
-    return QImage();
-}
-
 uint Compositor::currentTimeMsecs()
 {
     //### we throw away the time information
@@ -323,7 +294,10 @@ void Compositor::surfaceDestroyed(Surface *surface)
         // Make sure the surface is reset regardless of what the grabber
         // interface's focus() does. (e.g. the default implementation does
         // nothing when a button is down which would be disastrous here)
-        wl_pointer_set_focus(dev->pointerDevice(), 0, 0, 0);
+        dev->pointerDevice()->setFocus(0, QPointF());
+    }
+    if (dev->pointerDevice()->current() == surface) {
+        dev->pointerDevice()->setCurrent(0, QPointF());
     }
     if (dev->keyboardFocus() == surface)
         dev->setKeyboardFocus(0);
