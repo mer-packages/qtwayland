@@ -89,6 +89,7 @@ Surface::Surface(struct wl_client *client, uint32_t id, Compositor *compositor)
     , m_textureIdBuffer(0)
 {
     wl_list_init(&m_frame_callback_list);
+    wl_list_init(&m_pending_frame_callback_list);
 
     for (int i = 0; i < buffer_pool_size; i++)
         m_bufferPool[i] = new SurfaceBuffer(this);
@@ -485,7 +486,7 @@ void Surface::surface_damage(Resource *, int32_t x, int32_t y, int32_t width, in
 void Surface::surface_frame(Resource *resource, uint32_t callback)
 {
     struct wl_resource *frame_callback = wl_client_add_object(resource->client(), &wl_callback_interface, 0, callback, this);
-    wl_list_insert(&m_frame_callback_list, &frame_callback->link);
+    wl_list_insert(&m_pending_frame_callback_list, &frame_callback->link);
 }
 
 void Surface::surface_set_opaque_region(Resource *, struct wl_resource *region)
@@ -505,6 +506,15 @@ void Surface::surface_commit(Resource *)
             qWarning("Commit on invalid surface");
         return;
     }
+
+    if (!wl_list_empty(&m_pending_frame_callback_list))
+        m_compositor->markSurfaceAsDirty(this);
+
+    if (!wl_list_empty(&m_frame_callback_list))
+            qWarning("Previous callbacks not sent yet, client is not waiting for callbacks?");
+
+    wl_list_insert_list(&m_frame_callback_list, &m_pending_frame_callback_list);
+    wl_list_init(&m_pending_frame_callback_list);
 
     SurfaceBuffer *surfaceBuffer = m_bufferQueue.last();
     if (surfaceBuffer->isComitted()) {
