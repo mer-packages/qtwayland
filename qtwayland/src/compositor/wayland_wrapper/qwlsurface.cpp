@@ -229,8 +229,10 @@ GLuint Surface::textureId(QOpenGLContext *context) const
 
 void Surface::sendFrameCallback()
 {
-    SurfaceBuffer *surfacebuffer = currentSurfaceBuffer();
-    surfacebuffer->setDisplayed();
+    SurfaceBuffer *surfaceBuffer = currentSurfaceBuffer();
+    if (surfaceBuffer)
+        surfaceBuffer->setDisplayed();
+
     if (m_backBuffer) {
         if (m_frontBuffer) {
 #ifdef QT_COMPOSITOR_WAYLAND_GL
@@ -451,11 +453,13 @@ void Surface::damage(const QRect &rect)
         return;
     }
     SurfaceBuffer *surfaceBuffer =  m_bufferQueue.last();
-    if (surfaceBuffer->isComitted()) {
-        if (QT_WAYLAND_PRINT_BUFFERING_WARNINGS)
-            qWarning("Surface::damage() on a committed surface");
-    } else{
-        surfaceBuffer->setDamage(rect);
+    if (surfaceBuffer) {
+        if (surfaceBuffer->isComitted()) {
+            if (QT_WAYLAND_PRINT_BUFFERING_WARNINGS)
+                qWarning("Surface::damage() on a committed surface");
+        } else{
+            surfaceBuffer->setDamage(rect);
+        }
     }
 }
 
@@ -517,14 +521,16 @@ void Surface::surface_commit(Resource *)
     wl_list_init(&m_pending_frame_callback_list);
 
     SurfaceBuffer *surfaceBuffer = m_bufferQueue.last();
-    if (surfaceBuffer->isComitted()) {
-        if (QT_WAYLAND_PRINT_BUFFERING_WARNINGS)
-            qWarning("Committing buffer that has already been committed");
-    } else {
-        surfaceBuffer->setCommitted();
+    if (surfaceBuffer) {
+        if (surfaceBuffer->isComitted()) {
+            if (QT_WAYLAND_PRINT_BUFFERING_WARNINGS)
+                qWarning("Committing buffer that has already been committed");
+        } else {
+            surfaceBuffer->setCommitted();
+        }
+        advanceBufferQueue();
     }
 
-    advanceBufferQueue();
     doUpdate();
 }
 
