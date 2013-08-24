@@ -151,6 +151,7 @@ private:
     QPoint m_lastGlobalMousePos;
 
     struct wl_list m_frame_callback_list;
+    struct wl_list m_pending_frame_callback_list;
 
     ExtendedSurface *m_extendedSurface;
     SubSurface *m_subSurface;

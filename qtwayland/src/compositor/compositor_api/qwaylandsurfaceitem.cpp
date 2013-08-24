@@ -277,12 +277,12 @@ void QWaylandSurfaceItem::takeFocus()
 
 void QWaylandSurfaceItem::surfaceMapped()
 {
-    setPaintEnabled(true);
+    update();
 }
 
 void QWaylandSurfaceItem::surfaceUnmapped()
 {
-    setPaintEnabled(false);
+    update();
 }
 
 void QWaylandSurfaceItem::surfaceDestroyed(QObject *)
