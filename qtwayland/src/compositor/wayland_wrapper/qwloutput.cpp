@@ -85,8 +85,7 @@ void OutputGlobal::setRefreshRate(int rate)
 
 Output *OutputGlobal::outputForClient(wl_client *client) const
 {
-    struct wl_resource *resource = resourceForClient(resourceList(), client);
-    return resource != 0 ? static_cast<Output *>(resource->data) : 0;
+    return static_cast<Output *>(resourceForClient(resourceList(), client)->data);
 }
 
 } // namespace Wayland
