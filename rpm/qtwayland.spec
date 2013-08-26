@@ -88,6 +88,10 @@ find %{buildroot}%{_libdir} -type f -name '*.prl' \
 # We don't need qt5/Qt/
 rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 
+# Install generated protocol headers
+install -D -p -m 0644 src/compositor/qwayland-server-wayland.h %{buildroot}/%{_includedir}/qt5/QtCompositor/5.1.0/QtCompositor/private/
+install -D -p -m 0644 src/compositor/wayland-wayland-server-protocol.h %{buildroot}/%{_includedir}/qt5/QtCompositor/5.1.0/QtCompositor/private/
+  
 
 %fdupes %{buildroot}/%{_includedir}
 
