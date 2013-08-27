@@ -119,9 +119,32 @@ static Qt::ScreenOrientation screenOrientationFromWaylandOrientation(int32_t ori
     }
 }
 
+static Qt::ScreenOrientations screenOrientationsFromWaylandOrientations(int32_t orientations)
+{
+    Qt::ScreenOrientations screenOrientations = Qt::PrimaryOrientation;
+    if (orientations & QT_EXTENDED_SURFACE_ORIENTATION_PORTRAITORIENTATION) {
+        screenOrientations |= Qt::PortraitOrientation;
+    }
+    if (orientations & QT_EXTENDED_SURFACE_ORIENTATION_INVERTEDPORTRAITORIENTATION) {
+        screenOrientations |= Qt::InvertedPortraitOrientation;
+    }
+    if (orientations & QT_EXTENDED_SURFACE_ORIENTATION_LANDSCAPEORIENTATION) {
+        screenOrientations |= Qt::LandscapeOrientation;
+    }
+    if (orientations & QT_EXTENDED_SURFACE_ORIENTATION_INVERTEDLANDSCAPEORIENTATION) {
+        screenOrientations |= Qt::InvertedLandscapeOrientation;
+    }
+    return screenOrientations;
+}
+
 Qt::ScreenOrientation ExtendedSurface::contentOrientation() const
 {
     return m_contentOrientation;
+}
+
+Qt::ScreenOrientations ExtendedSurface::supportedOrientations() const
+{
+    return m_supportedOrientations;
 }
 
 void ExtendedSurface::extended_surface_set_content_orientation(Resource *resource, int32_t orientation)
@@ -131,6 +154,15 @@ void ExtendedSurface::extended_surface_set_content_orientation(Resource *resourc
     m_contentOrientation = screenOrientationFromWaylandOrientation(orientation);
     if (m_contentOrientation != oldOrientation)
         emit m_surface->waylandSurface()->contentOrientationChanged();
+}
+
+void ExtendedSurface::extended_surface_set_supported_orientations(Resource *resource, int32_t orientations)
+{
+    Q_UNUSED(resource);
+    Qt::ScreenOrientations oldOrientations = m_supportedOrientations;
+    m_supportedOrientations = screenOrientationsFromWaylandOrientations(orientations);
+    if (m_supportedOrientations != oldOrientations)
+        emit m_surface->waylandSurface()->supportedOrientationsChanged();
 }
 
 QVariantMap ExtendedSurface::windowProperties() const

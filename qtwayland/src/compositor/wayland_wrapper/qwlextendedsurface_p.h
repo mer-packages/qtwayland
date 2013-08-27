@@ -89,6 +89,7 @@ public:
     QLinkedList<QWaylandSurface *> subSurfaces() const;
 
     Qt::ScreenOrientation contentOrientation() const;
+    Qt::ScreenOrientations supportedOrientations() const;
 
     QWaylandSurface::WindowFlags windowFlags() const { return m_windowFlags; }
 
@@ -100,6 +101,7 @@ private:
     Surface *m_surface;
 
     Qt::ScreenOrientation m_contentOrientation;
+    Qt::ScreenOrientations m_supportedOrientations;
 
     QWaylandSurface::WindowFlags m_windowFlags;
     QWindow::Visibility m_visibility;
@@ -113,6 +115,8 @@ private:
 
     void extended_surface_set_content_orientation(Resource *resource,
                                                   int32_t orientation) Q_DECL_OVERRIDE;
+    void extended_surface_set_supported_orientations(Resource *resource,
+                                                     int32_t orientations) Q_DECL_OVERRIDE;
 
     void extended_surface_set_window_flags(Resource *resource,
                                            int32_t flags) Q_DECL_OVERRIDE;
