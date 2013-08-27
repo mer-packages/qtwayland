@@ -91,9 +91,32 @@ static int32_t waylandRotationFromScreenOrientation(Qt::ScreenOrientation orient
     }
 }
 
+static int32_t waylandRotationsFromScreenOrientations(Qt::ScreenOrientations orientations)
+{
+    int rotations = QT_EXTENDED_SURFACE_ORIENTATION_PRIMARYORIENTATION;
+    if (orientations & Qt::PortraitOrientation) {
+        rotations |= QT_EXTENDED_SURFACE_ORIENTATION_PORTRAITORIENTATION;
+    }
+    if (orientations & Qt::InvertedPortraitOrientation) {
+        rotations |= QT_EXTENDED_SURFACE_ORIENTATION_INVERTEDPORTRAITORIENTATION;
+    }
+    if (orientations & Qt::LandscapeOrientation) {
+        rotations |= QT_EXTENDED_SURFACE_ORIENTATION_LANDSCAPEORIENTATION;
+    }
+    if (orientations & Qt::InvertedLandscapeOrientation) {
+        rotations |= QT_EXTENDED_SURFACE_ORIENTATION_INVERTEDLANDSCAPEORIENTATION;
+    }
+    return rotations;
+}
+
 void QWaylandExtendedSurface::setContentOrientation(Qt::ScreenOrientation orientation)
 {
     set_content_orientation(waylandRotationFromScreenOrientation(orientation));
+}
+
+void QWaylandExtendedSurface::setSupportedOrientations(Qt::ScreenOrientations orientations)
+{
+    set_supported_orientations(waylandRotationsFromScreenOrientations(orientations));
 }
 
 QVariantMap QWaylandExtendedSurface::properties() const

@@ -75,6 +75,10 @@
             <arg name="orientation" type="int"/>
         </request>
 
+        <request name="set_supported_orientations">
+            <arg name="orientations" type="int"/>
+        </request>
+
         <enum name="windowflag">
             <entry name="OverridesSystemGestures" value="1"/>
             <entry name="StaysOnTop" value="2"/>

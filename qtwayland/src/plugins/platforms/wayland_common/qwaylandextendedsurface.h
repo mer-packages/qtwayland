@@ -60,6 +60,7 @@ public:
     ~QWaylandExtendedSurface();
 
     void setContentOrientation(Qt::ScreenOrientation orientation);
+    void setSupportedOrientations(Qt::ScreenOrientations orientations);
 
     void updateGenericProperty(const QString &name, const QVariant &value);
 

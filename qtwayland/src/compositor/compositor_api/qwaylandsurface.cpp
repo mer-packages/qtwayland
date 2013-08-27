@@ -168,6 +168,14 @@ Qt::ScreenOrientations QWaylandSurface::orientationUpdateMask() const
     return d->surface->compositor()->orientationUpdateMaskForClient(static_cast<wl_client *>(client()));
 }
 
+Qt::ScreenOrientations QWaylandSurface::supportedOrientations() const
+{
+    Q_D(const QWaylandSurface);
+    if (!d->surface->extendedSurface())
+        return Qt::PrimaryOrientation;
+    return d->surface->extendedSurface()->supportedOrientations();
+}
+
 Qt::ScreenOrientation QWaylandSurface::contentOrientation() const
 {
     Q_D(const QWaylandSurface);

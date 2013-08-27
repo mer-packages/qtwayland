@@ -80,6 +80,7 @@ class Q_COMPOSITOR_EXPORT QWaylandSurface : public QObject
     Q_PROPERTY(QString className READ className NOTIFY classNameChanged)
     Q_PROPERTY(QString title READ title NOTIFY titleChanged)
     Q_PROPERTY(Qt::ScreenOrientations orientationUpdateMask READ orientationUpdateMask NOTIFY orientationUpdateMaskChanged)
+    Q_PROPERTY(Qt::ScreenOrientations supportedOrientations READ supportedOrientations NOTIFY supportedOrientationsChanged)
     Q_PROPERTY(QWindow::Visibility visibility READ visibility WRITE setVisibility NOTIFY visibilityChanged)
 
     Q_ENUMS(WindowFlag)
@@ -117,6 +118,7 @@ public:
     void sendConfigure(const QSize &size);
 
     Qt::ScreenOrientations orientationUpdateMask() const;
+    Qt::ScreenOrientations supportedOrientations() const;
     Qt::ScreenOrientation contentOrientation() const;
 
     WindowFlags windowFlags() const;
@@ -174,6 +176,7 @@ signals:
     void windowFlagsChanged(WindowFlags flags);
     void contentOrientationChanged();
     void orientationUpdateMaskChanged();
+    void supportedOrientationsChanged();
     void extendedSurfaceReady();
     void classNameChanged();
     void titleChanged();
