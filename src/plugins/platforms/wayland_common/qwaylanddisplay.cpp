@@ -162,13 +162,15 @@ QWaylandDisplay::~QWaylandDisplay(void)
 
 void QWaylandDisplay::flushRequests()
 {
-    wl_display_dispatch_queue_pending(mDisplay, mEventQueue);
+    if (wl_display_dispatch_queue_pending(mDisplay, mEventQueue) == -1 && errno == EPIPE)
+        QCoreApplication::quit();
     wl_display_flush(mDisplay);
 }
 
 void QWaylandDisplay::blockingReadEvents()
 {
-    wl_display_dispatch_queue(mDisplay, mEventQueue);
+    if (wl_display_dispatch_queue(mDisplay, mEventQueue) == -1 && errno == EPIPE)
+        QCoreApplication::quit();
 }
 
 QWaylandScreen *QWaylandDisplay::screenForOutput(struct wl_output *output) const
@@ -235,7 +237,7 @@ void QWaylandDisplay::registry_global(uint32_t id, const QString &interface, uin
         mSubSurfaceExtension = new QtWayland::qt_sub_surface_extension(registry, id);
     } else if (interface == "qt_touch_extension") {
         mTouchExtension = new QWaylandTouchExtension(this, id);
-    } else if (interface == "qt_qtkey_extension") {
+    } else if (interface == "qt_key_extension") {
         mQtKeyExtension = new QWaylandQtKeyExtension(this, id);
     }
 
