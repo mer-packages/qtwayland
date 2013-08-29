@@ -1,9 +1,10 @@
 /****************************************************************************
 **
 ** Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies).
+** Copyright (C) 2013 Klarälvdalens Datakonsult AB (KDAB).
 ** Contact: http://www.qt-project.org/legal
 **
-** This file is part of the config.tests of the Qt Toolkit.
+** This file is part of the test suite of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:LGPL$
 ** Commercial License Usage
@@ -39,57 +40,80 @@
 **
 ****************************************************************************/
 
-#ifndef QWAYLANDSHELLSURFACE_H
-#define QWAYLANDSHELLSURFACE_H
+#ifndef MOCKINPUT_H
+#define MOCKINPUT_H
 
-#include <QtCore/QSize>
+#include <qglobal.h>
 
-#include <wayland-client.h>
+#include "qwayland-server-wayland.h"
 
-#include "qwayland-wayland.h"
+#include "mockcompositor.h"
 
-QT_BEGIN_NAMESPACE
+namespace Impl {
 
-class QWaylandWindow;
-class QWaylandInputDevice;
-class QWindow;
+class Keyboard;
+class Pointer;
 
-class QWaylandShellSurface : public QtWayland::wl_shell_surface
+class Seat : public QtWaylandServer::wl_seat
 {
 public:
-    QWaylandShellSurface(struct ::wl_shell_surface *shell_surface, QWaylandWindow *window);
-    ~QWaylandShellSurface();
+    Seat(Compositor *compositor, struct ::wl_display *display);
+    ~Seat();
 
-    using QtWayland::wl_shell_surface::resize;
-    void resize(QWaylandInputDevice *inputDevice, enum wl_shell_surface_resize edges);
+    Compositor *compositor() const { return m_compositor; }
 
-    using QtWayland::wl_shell_surface::move;
-    void move(QWaylandInputDevice *inputDevice);
+    Keyboard *keyboard() const { return m_keyboard.data(); }
+    Pointer *pointer() const { return m_pointer.data(); }
+
+protected:
+    void seat_bind_resource(Resource *resource) Q_DECL_OVERRIDE;
+    void seat_get_keyboard(Resource *resource, uint32_t id) Q_DECL_OVERRIDE;
+    void seat_get_pointer(Resource *resource, uint32_t id) Q_DECL_OVERRIDE;
 
 private:
-    void setMaximized();
-    void setFullscreen();
-    void setNormal();
-    void setMinimized();
+    Compositor *m_compositor;
 
-    void setTopLevel();
-    void updateTransientParent(QWindow *parent);
-    void setPopup(QWaylandWindow *parent, QWaylandInputDevice *device, int serial);
-
-    QWaylandWindow *m_window;
-    bool m_maximized;
-    bool m_fullscreen;
-    QSize m_size;
-
-    void shell_surface_ping(uint32_t serial) Q_DECL_OVERRIDE;
-    void shell_surface_configure(uint32_t edges,
-                                 int32_t width,
-                                 int32_t height) Q_DECL_OVERRIDE;
-    void shell_surface_popup_done() Q_DECL_OVERRIDE;
-
-    friend class QWaylandWindow;
+    QScopedPointer<Keyboard> m_keyboard;
+    QScopedPointer<Pointer> m_pointer;
 };
 
-QT_END_NAMESPACE
+class Keyboard : public QtWaylandServer::wl_keyboard
+{
+public:
+    Keyboard(Compositor *compositor);
+    ~Keyboard();
 
-#endif // QWAYLANDSHELLSURFACE_H
+    Surface *focus() const { return m_focus; }
+    void setFocus(Surface *surface);
+
+    void sendKey(uint32_t key, uint32_t state);
+
+private:
+    Compositor *m_compositor;
+
+    Resource *m_focusResource;
+    Surface *m_focus;
+};
+
+class Pointer : public QtWaylandServer::wl_pointer
+{
+public:
+    Pointer(Compositor *compositor);
+    ~Pointer();
+
+    Surface *focus() const { return m_focus; }
+
+    void setFocus(Surface *surface, const QPoint &pos);
+    void sendMotion(const QPoint &pos);
+    void sendButton(uint32_t button, uint32_t state);
+
+private:
+    Compositor *m_compositor;
+
+    Resource *m_focusResource;
+    Surface *m_focus;
+};
+
+}
+
+#endif // MOCKINPUT_H

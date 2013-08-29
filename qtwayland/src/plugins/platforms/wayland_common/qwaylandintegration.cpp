@@ -82,6 +82,31 @@ public:
 
         return QGenericUnixTheme::themeHint(hint);
     }
+
+    static QStringList themeNames()
+    {
+        QStringList result;
+
+        if (QGuiApplication::desktopSettingsAware()) {
+            const QByteArray desktopEnvironment = QGuiApplicationPrivate::platformIntegration()->services()->desktopEnvironment();
+
+            // Ignore X11 desktop environments
+            if (!desktopEnvironment.isEmpty() &&
+                desktopEnvironment != QByteArrayLiteral("UNKNOWN") &&
+                desktopEnvironment != QByteArrayLiteral("KDE") &&
+                desktopEnvironment != QByteArrayLiteral("GNOME") &&
+                desktopEnvironment != QByteArrayLiteral("UNITY") &&
+                desktopEnvironment != QByteArrayLiteral("MATE") &&
+                desktopEnvironment != QByteArrayLiteral("XFCE") &&
+                desktopEnvironment != QByteArrayLiteral("LXDE"))
+                result.push_back(desktopEnvironment.toLower());
+        }
+
+        if (result.isEmpty())
+            result.push_back(QLatin1String("generic_wayland"));
+
+        return result;
+    }
 };
 
 QWaylandIntegration::QWaylandIntegration()
@@ -95,7 +120,6 @@ QWaylandIntegration::QWaylandIntegration()
 #endif
 {
     QGuiApplicationPrivate::instance()->setEventDispatcher(mEventDispatcher);
-    QGuiApplication::setDesktopSettingsAware(false);
     mDisplay = new QWaylandDisplay();
     mClipboard = new QWaylandClipboard(mDisplay);
     mDrag = new QWaylandDrag(mDisplay);
@@ -218,16 +242,15 @@ QWaylandDisplay *QWaylandIntegration::display() const
 
 QStringList QWaylandIntegration::themeNames() const
 {
-    return QStringList("generic_wayland");
+    return GenericWaylandTheme::themeNames();
 }
 
 QPlatformTheme *QWaylandIntegration::createPlatformTheme(const QString &name) const
 {
-    if (name == "generic_wayland") {
+    if (name == QLatin1String("generic_wayland"))
         return new GenericWaylandTheme;
-    }
 
-    return 0;
+    return GenericWaylandTheme::createUnixTheme(name);
 }
 
 QT_END_NAMESPACE
