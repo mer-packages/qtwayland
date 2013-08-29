@@ -41,15 +41,13 @@
 
 #include <qglobal.h>
 
-#include <QtCompositor/qwaylandobject.h>
-
 #include "qwayland-server-wayland.h"
 
 #include "mockcompositor.h"
 
 namespace Impl {
 
-class Surface : public QtWayland::Object<struct ::wl_surface>, public QtWaylandServer::wl_surface
+class Surface : public QtWaylandServer::wl_surface
 {
 public:
     Surface(wl_client *client, uint32_t id, Compositor *compositor);
@@ -72,7 +70,7 @@ protected:
                        uint32_t callback) Q_DECL_OVERRIDE;
     void surface_commit(Resource *resource) Q_DECL_OVERRIDE;
 private:
-    wl_buffer *m_buffer;
+    wl_resource *m_buffer;
 
     Compositor *m_compositor;
     QSharedPointer<MockSurface> m_mockSurface;
