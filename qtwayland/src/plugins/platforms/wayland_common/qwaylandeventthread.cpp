@@ -1,6 +1,6 @@
 #include "qwaylandeventthread.h"
 #include <QtCore/QSocketNotifier>
-#include <QtCore/QCoreApplication>
+#include <QCoreApplication>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -32,10 +32,8 @@ void QWaylandEventThread::displayConnect()
 
 void QWaylandEventThread::readWaylandEvents()
 {
-    if (wl_display_dispatch(m_display) < 0) {
-        qWarning("The wayland connection broke (error %d). Did the wayland compositor die?", errno);
-        QCoreApplication::exit(1);
-    }
+    if (wl_display_dispatch(m_display) == -1 && errno == EPIPE)
+        QCoreApplication::quit();
     emit newEventsRead();
 }
 

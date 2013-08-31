@@ -425,7 +425,8 @@ void Compositor::setScreenOrientation(Qt::ScreenOrientation orientation)
     for (int i = 0; i < clientList.length(); ++i) {
         struct wl_client *client = clientList.at(i);
         Output *output = m_output_global->outputForClient(client);
-        if (output && output->extendedOutput)
+        Q_ASSERT(output);
+        if (output->extendedOutput)
             output->extendedOutput->sendOutputOrientation(orientation);
     }
 }
@@ -481,22 +482,6 @@ QList<QtWayland::Surface *> Compositor::surfacesForClient(wl_client *client)
         }
     }
     return ret;
-}
-
-wl_resource *Compositor::resourceForSurface(wl_list *resourceList, Surface *surface)
-{
-    if (!surface)
-        return 0;
-
-    wl_resource *r;
-    wl_client *surfaceClient = surface->resource()->client();
-
-    wl_list_for_each(r, resourceList, link) {
-        if (r->client == surfaceClient)
-            return r;
-    }
-
-    return 0;
 }
 
 void Compositor::configureTouchExtension(int flags)

@@ -47,11 +47,11 @@
 #include "qwlcompositor_p.h"
 #include "qwlsurface_p.h"
 
-#ifndef QT_NO_WAYLAND_XKB
 #include <fcntl.h>
+#include <unistd.h>
+#ifndef QT_NO_WAYLAND_XKB
 #include <sys/mman.h>
 #include <sys/types.h>
-#include <unistd.h>
 #endif
 
 namespace QtWayland {
@@ -90,8 +90,7 @@ void Keyboard::setFocus(Surface *surface)
         send_leave(m_focusResource->handle, serial, m_focus->resource()->handle);
     }
 
-    struct ::wl_resource *r = Compositor::resourceForSurface(resourceList(), surface);
-    Resource *resource = r ? Resource::fromResource(r) : 0;
+    Resource *resource = surface ? resourceMap().value(surface->resource()->client()) : 0;
 
     if (resource && (m_focus != surface || m_focusResource != resource)) {
         uint32_t serial = wl_display_next_serial(m_compositor->wl_display());
