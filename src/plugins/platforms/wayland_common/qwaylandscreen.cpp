@@ -88,6 +88,15 @@ QImage::Format QWaylandScreen::format() const
     return mFormat;
 }
 
+QDpi QWaylandScreen::logicalDpi() const
+{
+    static int force_dpi = !qgetenv("QT_WAYLAND_FORCE_DPI").isEmpty() ? qgetenv("QT_WAYLAND_FORCE_DPI").toInt() : -1;
+    if (force_dpi > 0)
+        return QDpi(force_dpi, force_dpi);
+
+    return QPlatformScreen::logicalDpi();
+}
+
 void QWaylandScreen::setOrientationUpdateMask(Qt::ScreenOrientations mask)
 {
     if (mExtendedOutput)
@@ -144,7 +153,7 @@ void QWaylandScreen::output_mode(uint32_t flags, int width, int height, int refr
 
     if (refresh != mRefreshRate) {
         mRefreshRate = refresh;
-        QWindowSystemInterface::handleScreenRefreshRateChange(screen(), mRefreshRate);
+        QWindowSystemInterface::handleScreenRefreshRateChange(screen(), refreshRate());
     }
 }
 
