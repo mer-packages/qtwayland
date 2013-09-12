@@ -59,9 +59,10 @@ class QmlCompositor : public QQuickView, public QWaylandCompositor
 
 public:
     QmlCompositor()
-        : QWaylandCompositor(this, 0, static_cast<ExtensionFlag>(DefaultExtensions | SubSurfaceExtension))
+        : QWaylandCompositor(this)
         , m_fullscreenSurface(0)
     {
+        enableSubSurfaceExtension();
         setSource(QUrl("main.qml"));
         setResizeMode(QQuickView::SizeRootObjectToView);
         setColor(Qt::black);

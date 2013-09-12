@@ -59,7 +59,7 @@
 
 QT_BEGIN_NAMESPACE
 
-QWaylandCompositor::QWaylandCompositor(QWindow *window, const char *socketName, ExtensionFlag extensions)
+QWaylandCompositor::QWaylandCompositor(QWindow *window, const char *socketName)
     : m_compositor(0)
     , m_toplevel_window(window)
     , m_socket_name(socketName)
@@ -70,7 +70,7 @@ QWaylandCompositor::QWaylandCompositor(QWindow *window, const char *socketName, 
     if (socketArg != -1 && socketArg + 1 < arguments.size())
         m_socket_name = arguments.at(socketArg + 1).toLocal8Bit();
 
-    m_compositor = new QtWayland::Compositor(this, extensions);
+    m_compositor = new QtWayland::Compositor(this);
 #ifdef QT_COMPOSITOR_QUICK
     qmlRegisterType<QWaylandSurfaceItem>("WaylandCompositor", 1, 0, "WaylandSurfaceItem");
     qmlRegisterType<QWaylandSurface>("WaylandCompositor", 1, 0, "WaylandSurface");
@@ -251,6 +251,16 @@ void QWaylandCompositor::setCursorSurface(QWaylandSurface *surface, int hotspotX
     Q_UNUSED(hotspotX);
     Q_UNUSED(hotspotY);
     qDebug() << "changeCursor" << surface->size() << hotspotX << hotspotY;
+}
+
+void QWaylandCompositor::enableSubSurfaceExtension()
+{
+    m_compositor->enableSubSurfaceExtension();
+}
+
+void QWaylandCompositor::enableTouchExtension()
+{
+    // nothing to do here
 }
 
 void QWaylandCompositor::configureTouchExtension(TouchExtensionFlags flags)

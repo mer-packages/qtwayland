@@ -125,7 +125,7 @@ Compositor *Compositor::instance()
     return compositor;
 }
 
-Compositor::Compositor(QWaylandCompositor *qt_compositor, QWaylandCompositor::ExtensionFlag extensions)
+Compositor::Compositor(QWaylandCompositor *qt_compositor)
     : m_display(new Display)
     , m_default_input_device(0)
     , m_pageFlipper(0)
@@ -139,12 +139,10 @@ Compositor::Compositor(QWaylandCompositor *qt_compositor, QWaylandCompositor::Ex
 #if defined (QT_COMPOSITOR_WAYLAND_GL)
     , m_graphics_hw_integration(0)
 #endif
-    , m_windowManagerIntegration(0)
     , m_outputExtension(0)
     , m_surfaceExtension(0)
     , m_subSurfaceExtension(0)
     , m_touchExtension(0)
-    , m_qtkeyExtension(0)
     , m_retainNotify(0)
 {
     compositor = this;
@@ -180,8 +178,7 @@ Compositor::Compositor(QWaylandCompositor *qt_compositor, QWaylandCompositor::Ex
     if (!throttleEnv.isEmpty() && throttleEnv != "0" && throttleEnv != "false")
         compositor_no_throttle = true;
 
-    if (extensions & QWaylandCompositor::WindowManagerExtension)
-        m_windowManagerIntegration = new WindowManagerServerIntegration(qt_compositor, this);
+    m_windowManagerIntegration = new WindowManagerServerIntegration(qt_compositor, this);
 
     wl_display_add_global(m_display->handle(),&wl_compositor_interface,this,Compositor::bind_func);
 
@@ -194,16 +191,10 @@ Compositor::Compositor(QWaylandCompositor *qt_compositor, QWaylandCompositor::Ex
     m_shell = new Shell();
     wl_display_add_global(m_display->handle(), &wl_shell_interface, m_shell, Shell::bind_func);
 
-    if (extensions & QWaylandCompositor::OutputExtension)
-        m_outputExtension = new OutputExtensionGlobal(this);
-    if (extensions & QWaylandCompositor::SurfaceExtension)
-        m_surfaceExtension = new SurfaceExtensionGlobal(this);
-    if (extensions & QWaylandCompositor::SubSurfaceExtension)
-        m_subSurfaceExtension = new SubSurfaceExtensionGlobal(this);
-    if (extensions & QWaylandCompositor::TouchExtension)
-        m_touchExtension = new TouchExtensionGlobal(this);
-    if (extensions & QWaylandCompositor::QtKeyExtension)
-        m_qtkeyExtension = new QtKeyExtensionGlobal(this);
+    m_outputExtension = new OutputExtensionGlobal(this);
+    m_surfaceExtension = new SurfaceExtensionGlobal(this);
+    m_qtkeyExtension = new QtKeyExtensionGlobal(this);
+    m_touchExtension = new TouchExtensionGlobal(this);
 
     if (wl_display_add_socket(m_display->handle(), qt_compositor->socketName())) {
         fprintf(stderr, "Fatal: Failed to open server socket\n");
@@ -330,8 +321,7 @@ void Compositor::destroyClient(WaylandClient *c)
     if (!client)
         return;
 
-    if (m_windowManagerIntegration)
-        m_windowManagerIntegration->sendQuitMessage(client);
+    m_windowManagerIntegration->sendQuitMessage(client);
 
     wl_client_destroy(client);
 }
@@ -366,8 +356,14 @@ void Compositor::initializeDefaultInputDevice()
 
 void Compositor::initializeWindowManagerProtocol()
 {
-    if (m_windowManagerIntegration)
-        m_windowManagerIntegration->initialize(m_display);
+    m_windowManagerIntegration->initialize(m_display);
+}
+
+void Compositor::enableSubSurfaceExtension()
+{
+    if (!m_subSurfaceExtension) {
+        m_subSurfaceExtension = new SubSurfaceExtensionGlobal(this);
+    }
 }
 
 bool Compositor::setDirectRenderSurface(Surface *surface, QOpenGLContext *context)
@@ -468,8 +464,7 @@ int Compositor::outputRefreshRate() const
 
 void Compositor::setClientFullScreenHint(bool value)
 {
-    if (m_windowManagerIntegration)
-        m_windowManagerIntegration->setShowIsFullScreen(value);
+    m_windowManagerIntegration->setShowIsFullScreen(value);
 }
 
 InputDevice* Compositor::defaultInputDevice()
