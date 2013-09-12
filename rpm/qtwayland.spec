@@ -71,7 +71,7 @@ This package contains the Qt wayland compositor examples for wayland_egl
 export QTDIR=/usr/share/qt5
 export QT_WAYLAND_GL_CONFIG=wayland_egl
 touch .git
-qmake -qt=5 "QT_BUILD_PARTS += examples" "CONFIG += wayland-compositor" 
+%qmake5 "QT_BUILD_PARTS += examples" "CONFIG += wayland-compositor" 
 
 make %{?_smp_mflags}
 
