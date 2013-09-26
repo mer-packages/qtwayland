@@ -47,7 +47,7 @@
 
 #include "wayland-client.h"
 #include "qwaylanddisplay.h"
-#include <qpa/qplatformservices.h>
+#include <private/qgenericunixservices_p.h>
 
 #include "qwayland-windowmanager.h"
 
@@ -57,7 +57,7 @@ class QWaylandWindow;
 
 class QWaylandWindowManagerIntegrationPrivate;
 
-class QWaylandWindowManagerIntegration : public QObject, public QPlatformServices, public QtWayland::qt_windowmanager
+class QWaylandWindowManagerIntegration : public QObject, public QGenericUnixServices, public QtWayland::qt_windowmanager
 {
     Q_OBJECT
     Q_DECLARE_PRIVATE(QWaylandWindowManagerIntegration)
@@ -66,9 +66,6 @@ public:
     virtual ~QWaylandWindowManagerIntegration();
 
     QByteArray desktopEnvironment() const;
-
-    bool openUrl(const QUrl &url);
-    bool openDocument(const QUrl &url);
 
     bool showIsFullScreen() const;
 
