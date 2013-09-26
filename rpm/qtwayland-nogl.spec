@@ -62,8 +62,6 @@ mobile and embedded systems without rewriting the source code.
 .
 This package contains the Qt wayland compositor examples for nogl
 
-#### Build section
-
 %prep
 %setup -q -n %{name}-%{version}/qtwayland
 
@@ -71,7 +69,7 @@ This package contains the Qt wayland compositor examples for nogl
 export QTDIR=/usr/share/qt5
 export QT_WAYLAND_GL_CONFIG=nogl
 touch .git
-qmake -qt=5 "QT_BUILD_PARTS += examples" "CONFIG += wayland-compositor" 
+%qmake5 "QT_BUILD_PARTS += examples" "CONFIG += wayland-compositor" 
 
 make %{?_smp_mflags}
 
@@ -91,14 +89,8 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 
 %fdupes %{buildroot}/%{_includedir}
 
-
-#### Pre/Post section
-
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
-
-
-#### File section
 
 %files
 %defattr(-,root,root,-)
@@ -134,4 +126,3 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %defattr(-,root,root,-)
 %{_libdir}/qt5/examples/qtwayland/
 
-#### No changelog section, separate $pkg.changes contains the history
