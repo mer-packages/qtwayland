@@ -77,6 +77,29 @@ bool QtKeyExtensionGlobal::postQtKeyEvent(QKeyEvent *event, Surface *surface)
     return false;
 }
 
+bool QtKeyExtensionGlobal::postGlobalQtKeyEvent(QKeyEvent *event, Surface *surface)
+{
+    uint32_t time = m_compositor->currentTimeMsecs();
+
+    Resource *target = surface ? resourceMap().value(surface->resource()->client()) : 0;
+
+    if (target) {
+        send_globalqtkey(target->handle,
+                   surface->resource()->handle,
+                   time, event->type(), event->key(), event->modifiers(),
+                   event->nativeScanCode(),
+                   event->nativeVirtualKey(),
+                   event->nativeModifiers(),
+                   event->text(),
+                   event->isAutoRepeat(),
+                   event->count());
+
+        return true;
+    }
+
+    return false;
+}
+
 }
 
 QT_END_NAMESPACE

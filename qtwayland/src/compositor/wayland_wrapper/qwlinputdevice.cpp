@@ -207,7 +207,7 @@ void InputDevice::sendFullKeyEvent(Surface *surface, QKeyEvent *event)
 {
     QtKeyExtensionGlobal *ext = m_compositor->qtkeyExtension();
     if (ext)
-        ext->postQtKeyEvent(event, surface);
+        ext->postGlobalQtKeyEvent(event, surface);
 }
 
 void InputDevice::sendFullTouchEvent(QTouchEvent *event)

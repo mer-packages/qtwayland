@@ -81,4 +81,29 @@ void QWaylandQtKeyExtension::key_extension_qtkey(uint32_t time,
                                                    autorep, count);
 }
 
+void QWaylandQtKeyExtension::key_extension_globalqtkey(struct wl_surface *surface,
+                                                   uint32_t time,
+                                                   uint32_t type,
+                                                   uint32_t key,
+                                                   uint32_t modifiers,
+                                                   uint32_t nativeScanCode,
+                                                   uint32_t nativeVirtualKey,
+                                                   uint32_t nativeModifiers,
+                                                   const QString &text,
+                                                   uint32_t autorep,
+                                                   uint32_t count)
+{
+    QWaylandWindow *win = QWaylandWindow::fromWlSurface(surface);
+
+    if (!win || !win->window()) {
+        qWarning("qt_key_extension: handle_globalqtkey: No keyboard focus");
+        return;
+    }
+
+    QWindow *window = win->window();
+    QWindowSystemInterface::handleExtendedKeyEvent(window, time, QEvent::Type(type), key, Qt::KeyboardModifiers(modifiers),
+                                                   nativeScanCode, nativeVirtualKey, nativeModifiers, text,
+                                                   autorep, count);
+}
+
 QT_END_NAMESPACE
