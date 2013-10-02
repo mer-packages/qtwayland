@@ -81,6 +81,7 @@ class Q_COMPOSITOR_EXPORT QWaylandSurface : public QObject
     Q_PROPERTY(QString title READ title NOTIFY titleChanged)
     Q_PROPERTY(Qt::ScreenOrientations orientationUpdateMask READ orientationUpdateMask NOTIFY orientationUpdateMaskChanged)
     Q_PROPERTY(QWindow::Visibility visibility READ visibility WRITE setVisibility NOTIFY visibilityChanged)
+    Q_PROPERTY(qint64 processId READ processId CONSTANT)
 
     Q_ENUMS(WindowFlag)
     Q_FLAGS(WindowFlag WindowFlags)
