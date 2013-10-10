@@ -63,6 +63,7 @@ QWaylandEglWindow::QWaylandEglWindow(QWindow *window)
     , m_contentFBO(0)
     , m_resize(false)
     , m_format(window->requestedFormat())
+    , m_needsSwap(false)
 {
     setGeometry(window->geometry());
 }
@@ -100,6 +101,9 @@ void QWaylandEglWindow::setGeometry(const QRect &rect)
             mOffset = QPoint();
 
             m_resize = true;
+#ifdef EGL_RESIZE_SWAP
+            m_needsSwap = true;
+#endif
         }
     } else {
         m_waylandEglWindow = wl_egl_window_create(object(), sizeWithMargins.width(), sizeWithMargins.height());
@@ -134,6 +138,9 @@ EGLSurface QWaylandEglWindow::eglSurface() const
 
         EGLNativeWindowType window = (EGLNativeWindowType) m_waylandEglWindow;
         m_eglSurface = eglCreateWindowSurface(m_eglIntegration->eglDisplay(), m_eglConfig, window, 0);
+#ifdef EGL_RESIZE_SWAP
+        eglSurfaceAttrib(m_eglIntegration->eglDisplay(), m_eglSurface, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
+#endif
     }
 
     return m_eglSurface;
@@ -166,6 +173,11 @@ void QWaylandEglWindow::bindContentFBO()
         contentFBO();
         m_contentFBO->bind();
     }
+}
+
+void QWaylandEglWindow::wasSwapped()
+{
+    m_needsSwap = false;
 }
 
 QT_END_NAMESPACE
