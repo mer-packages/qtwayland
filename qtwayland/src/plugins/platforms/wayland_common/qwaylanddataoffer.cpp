@@ -45,8 +45,6 @@
 #include <QtGui/private/qguiapplication_p.h>
 #include <qpa/qplatformclipboard.h>
 
-#include <QtCore/QDebug>
-
 QT_BEGIN_NAMESPACE
 
 void QWaylandDataOffer::offer_sync_callback(void *data,
@@ -66,20 +64,33 @@ const struct wl_callback_listener QWaylandDataOffer::offer_sync_callback_listene
 };
 
 void QWaylandDataOffer::offer(void *data,
-              struct wl_data_offer *wl_data_offer,
-              const char *type)
+                              struct wl_data_offer *wl_data_offer,
+                              const char *type)
 {
     Q_UNUSED(wl_data_offer);
 
-    QWaylandDataOffer *data_offer = static_cast<QWaylandDataOffer *>(data);
+    QWaylandDataOffer *that = static_cast<QWaylandDataOffer *>(data);
 
-    if (!data_offer->m_receiveSyncCallback) {
-        data_offer->m_receiveSyncCallback = wl_display_sync(data_offer->m_display->wl_display());
-        wl_callback_add_listener(data_offer->m_receiveSyncCallback, &offer_sync_callback_listener, data_offer);
+    if (!that->m_receiveSyncCallback) {
+        that->m_receiveSyncCallback = wl_display_sync(that->m_display->wl_display());
+        wl_callback_add_listener(that->m_receiveSyncCallback, &offer_sync_callback_listener, that);
     }
 
-    data_offer->m_offered_mime_types.append(QString::fromLocal8Bit(type));
-//    qDebug() << data_offer->m_offered_mime_types;
+    const QString typeString = QString::fromUtf8(type);
+    if (that->m_types.contains(typeString))
+        close(that->m_types.take(typeString)); // Unconsumed data
+    that->m_data.remove(typeString); // Clear previous contents
+
+    int pipefd[2];
+    if (pipe2(pipefd, O_CLOEXEC|O_NONBLOCK) == -1) {
+        qWarning("QWaylandMimeData: pipe2() failed");
+        return;
+    }
+
+    wl_data_offer_receive(wl_data_offer, type, pipefd[1]);
+    that->m_display->forceRoundTrip();
+    close(pipefd[1]);
+    that->m_types.insert(typeString, pipefd[0]);
 }
 
 const struct wl_data_offer_listener QWaylandDataOffer::data_offer_listener = {
@@ -87,61 +98,73 @@ const struct wl_data_offer_listener QWaylandDataOffer::data_offer_listener = {
 };
 
 QWaylandDataOffer::QWaylandDataOffer(QWaylandDisplay *display, struct wl_data_offer *data_offer)
-    : m_display(display)
+    : m_handle(data_offer)
+    , m_display(display)
     , m_receiveSyncCallback(0)
 {
-    m_data_offer = data_offer;
-    wl_data_offer_set_user_data(m_data_offer,this);
-    wl_data_offer_add_listener(m_data_offer,&data_offer_listener,this);
+    wl_data_offer_set_user_data(m_handle, this);
+    wl_data_offer_add_listener(m_handle, &data_offer_listener, this);
 }
 
 QWaylandDataOffer::~QWaylandDataOffer()
 {
-    wl_data_offer_destroy(m_data_offer);
+    wl_data_offer_destroy(m_handle);
 }
 
 bool QWaylandDataOffer::hasFormat_sys(const QString &mimeType) const
 {
-    return m_offered_mime_types.contains(mimeType);
+    return m_types.contains(mimeType);
 }
 
 QStringList QWaylandDataOffer::formats_sys() const
 {
-    return m_offered_mime_types;
+    return m_types.keys();
 }
 
 QVariant QWaylandDataOffer::retrieveData_sys(const QString &mimeType, QVariant::Type type) const
 {
     Q_UNUSED(type);
-    if (m_offered_mime_types.isEmpty())
+    if (m_data.contains(mimeType))
+        return m_data.value(mimeType);
+
+    if (!m_types.contains(mimeType))
         return QVariant();
-
-    int pipefd[2];
-    if (pipe(pipefd) == -1) {
-        qWarning("QWaylandMimeData: pipe() failed");
-        return QVariant();
-    }
-
-    QByteArray mimeTypeBa = mimeType.toLatin1();
-    wl_data_offer_receive(m_data_offer,mimeTypeBa.constData(),pipefd[1]);
-
-    m_display->forceRoundTrip();
-    close(pipefd[1]);
 
     QByteArray content;
-    char buf[256];
-    int n;
-    while ((n = QT_READ(pipefd[0], &buf, sizeof buf)) > 0) {
-        content.append(buf, n);
+    int fd = m_types.take(mimeType);
+    if (readData(fd, content) != 0) {
+        qWarning("QWaylandDataOffer: error reading data for mimeType %s", qPrintable(mimeType));
+        content = QByteArray();
     }
-
-    close(pipefd[0]);
+    close(fd);
+    m_data.insert(mimeType, content);
     return content;
+}
+
+int QWaylandDataOffer::readData(int fd, QByteArray &data)
+{
+    char buf[4096];
+    int retryCount = 0;
+    int n;
+    while (true) {
+        n = QT_READ(fd, buf, sizeof buf);
+        if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK) && ++retryCount < 1000)
+            usleep(1000);
+        else
+            break;
+    }
+    if (retryCount >= 1000)
+        qWarning("QWaylandDataOffer: timeout reading from pipe");
+    if (n > 0) {
+        data.append(buf, n);
+        n = readData(fd, data);
+    }
+    return n;
 }
 
 struct wl_data_offer *QWaylandDataOffer::handle() const
 {
-    return m_data_offer;
+    return m_handle;
 }
 
 QT_END_NAMESPACE
