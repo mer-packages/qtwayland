@@ -74,15 +74,6 @@ QT_BEGIN_NAMESPACE
 class GenericWaylandTheme: public QGenericUnixTheme
 {
 public:
-    QVariant themeHint(ThemeHint hint) const
-    {
-        if (hint == QPlatformTheme::PasswordMaskDelay) {
-            return QVariant(1000);
-        }
-
-        return QGenericUnixTheme::themeHint(hint);
-    }
-
     static QStringList themeNames()
     {
         QStringList result;
