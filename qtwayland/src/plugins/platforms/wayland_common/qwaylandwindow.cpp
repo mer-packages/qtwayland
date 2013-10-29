@@ -584,4 +584,10 @@ void QWaylandWindow::restoreMouseCursor(QWaylandInputDevice *device)
     setMouseCursor(device, window()->cursor().shape());
 }
 
+void QWaylandWindow::requestActivateWindow()
+{
+    // no-op. Wayland does not have activation protocol,
+    // we rely on compositor setting keyboard focus based on window stacking.
+}
+
 QT_END_NAMESPACE
