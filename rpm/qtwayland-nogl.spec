@@ -76,6 +76,9 @@ make %{?_smp_mflags}
 %install
 rm -rf %{buildroot}
 %qmake_install
+
+rm %{buildroot}%{_libdir}/cmake/Qt5Gui/Qt5Gui_.cmake
+
 # Fix wrong path in pkgconfig files
 find %{buildroot}%{_libdir}/pkgconfig -type f -name '*.pc' \
 -exec perl -pi -e "s, -L%{_builddir}/?\S+,,g" {} \;
