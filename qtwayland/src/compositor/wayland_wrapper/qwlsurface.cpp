@@ -372,10 +372,12 @@ void Surface::doUpdate() {
         sendFrameCallback();
     } else {
         SurfaceBuffer *surfaceBuffer = currentSurfaceBuffer();
-        if (surfaceBuffer && surfaceBuffer->damageRect().isValid()) {
-            emit m_waylandSurface->damaged(surfaceBuffer->damageRect());
-        } else {
-            sendFrameCallback();
+
+        if (surfaceBuffer) {
+            if (surfaceBuffer->damageRect().isValid()) {
+                m_compositor->markSurfaceAsDirty(this);
+                emit m_waylandSurface->damaged(surfaceBuffer->damageRect());
+            }
         }
     }
 }
