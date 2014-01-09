@@ -90,6 +90,9 @@ Surface::Surface(struct wl_client *client, uint32_t id, Compositor *compositor)
 {
     wl_list_init(&m_frame_callback_list);
     wl_list_init(&m_pending_frame_callback_list);
+
+    for (int i = 0; i < buffer_pool_size; i++)
+        m_bufferPool[i] = new SurfaceBuffer(this);
 }
 
 Surface::~Surface()
@@ -97,7 +100,7 @@ Surface::~Surface()
     delete m_waylandSurface;
     delete m_subSurface;
 
-    for (int i = 0; i < m_bufferPool.size(); i++) {
+    for (int i = 0; i < buffer_pool_size; i++) {
         if (!m_bufferPool[i]->pageFlipperHasBuffer())
             delete m_bufferPool[i];
     }
@@ -380,7 +383,7 @@ void Surface::doUpdate() {
 SurfaceBuffer *Surface::createSurfaceBuffer(struct ::wl_resource *buffer)
 {
     SurfaceBuffer *newBuffer = 0;
-    for (int i = 0; i < m_bufferPool.size(); i++) {
+    for (int i = 0; i < Surface::buffer_pool_size; i++) {
         if (!m_bufferPool[i]->isRegisteredWithBuffer()) {
             newBuffer = m_bufferPool[i];
             newBuffer->initialize(buffer);
@@ -388,14 +391,7 @@ SurfaceBuffer *Surface::createSurfaceBuffer(struct ::wl_resource *buffer)
         }
     }
 
-    if (!newBuffer) {
-        newBuffer = new SurfaceBuffer(this);
-        newBuffer->initialize(buffer);
-        m_bufferPool.append(newBuffer);
-        if (m_bufferPool.size() > 3)
-            qWarning() << Q_FUNC_INFO << "Increased buffer pool size to" << m_bufferPool.size() << "for surface with title:" << title() << "className:" << className();
-    }
-
+    Q_ASSERT(newBuffer);
     return newBuffer;
 }
 
