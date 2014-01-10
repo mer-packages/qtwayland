@@ -206,7 +206,7 @@ QImage Surface::image() const
 #ifdef QT_COMPOSITOR_WAYLAND_GL
 GLuint Surface::textureId(QOpenGLContext *context) const
 {
-    const SurfaceBuffer *surfacebuffer = currentSurfaceBuffer();
+    const SurfaceBuffer *surfacebuffer = m_frontBuffer;
 
     if (m_compositor->graphicsHWIntegration() && type() == QWaylandSurface::Texture
          && !surfacebuffer->textureCreated()) {
@@ -219,18 +219,6 @@ GLuint Surface::textureId(QOpenGLContext *context) const
 
 void Surface::sendFrameCallback()
 {
-    SurfaceBuffer *surfaceBuffer = currentSurfaceBuffer();
-    if (surfaceBuffer)
-        surfaceBuffer->setDisplayed();
-
-    if (m_backBuffer) {
-        if (m_frontBuffer)
-            m_frontBuffer->disown();
-        m_frontBuffer = m_backBuffer;
-    }
-
-    bool updateNeeded = advanceBufferQueue();
-
     uint time = Compositor::currentTimeMsecs();
     struct wl_resource *frame_callback, *next;
     wl_list_for_each_safe(frame_callback, next, &m_frame_callback_list, link) {
@@ -238,9 +226,6 @@ void Surface::sendFrameCallback()
         wl_resource_destroy(frame_callback);
     }
     wl_list_init(&m_frame_callback_list);
-
-    if (updateNeeded)
-        doUpdate();
 }
 
 void Surface::frameFinished()
@@ -295,71 +280,67 @@ Compositor *Surface::compositor() const
     return m_compositor;
 }
 
-bool Surface::advanceBufferQueue()
+void Surface::advanceBufferQueue()
 {
-    //has current buffer been displayed,
-    //do we have another buffer in the queue
-    //and does it have a valid damage rect
+    SurfaceBuffer *front = m_frontBuffer;
 
-    if (m_backBuffer && !m_backBuffer->isDisplayed())
-        return true;
-    if (m_bufferQueue.size()) {
-        QSize size;
-        if (m_backBuffer && m_backBuffer->waylandBufferHandle()) {
-            size = m_backBuffer->size();
-        }
-
-        if (!m_bufferQueue.first()->isComitted())
-            return false;
-
-        m_backBuffer = m_bufferQueue.takeFirst();
-        while (m_backBuffer && m_backBuffer->isDestroyed()) {
+    // Advance current back buffer to the front buffer.
+    if (m_backBuffer) {
+        if (m_backBuffer->isDestroyed()) {
             m_backBuffer->disown();
-            m_backBuffer = m_bufferQueue.size() ? m_bufferQueue.takeFirst() : 0;
+            m_backBuffer = 0;
         }
+        m_frontBuffer = m_backBuffer;
+        m_backBuffer = 0;
+    }
 
-        if (!m_backBuffer)
-            return false; //we have no new backbuffer;
-
-        if (m_backBuffer->waylandBufferHandle()) {
-            size = m_backBuffer->size();
+    // Set a new back buffer if there is something in the queue.
+    if (m_bufferQueue.size() && m_bufferQueue.first()->isComitted()) {
+        SurfaceBuffer *next = m_bufferQueue.takeFirst();
+        while (next && next->isDestroyed()) {
+            next->disown();
+            next = m_bufferQueue.size() ? m_bufferQueue.takeFirst() : 0;
         }
-        setSize(size);
+        setBackBuffer(next);
+    }
 
+    // Release the old front buffer if we changed it.
+    if (front && front != m_frontBuffer)
+        front->disown();
+}
 
-        if (m_backBuffer &&  (!m_subSurface || !m_subSurface->parent()) && !m_surfaceMapped) {
+/*!
+ * Sets the backbuffer for this surface. The back buffer is not yet on
+ * screen and will become live during the next scene graph sync phase.
+ *
+ * The backbuffer represents the current state of the surface for the
+ * purpose of GUI-thread accessible properties such as size and visibility.
+ */
+void Surface::setBackBuffer(SurfaceBuffer *buffer)
+{
+    m_backBuffer = buffer;
+
+    if (m_backBuffer) {
+        bool valid = m_backBuffer->waylandBufferHandle() != 0;
+        setSize(valid ? m_backBuffer->size() : QSize());
+
+        if ((!m_subSurface || !m_subSurface->parent()) && !m_surfaceMapped) {
             m_surfaceMapped = true;
             emit m_waylandSurface->mapped();
-        } else if (m_backBuffer && !m_backBuffer->waylandBufferHandle() && m_surfaceMapped) {
+        } else if (!valid && m_surfaceMapped) {
             m_surfaceMapped = false;
             emit m_waylandSurface->unmapped();
         }
 
+        m_compositor->markSurfaceAsDirty(this);
+        emit m_waylandSurface->damaged(m_backBuffer->damageRect());
+
     } else {
-        m_backBuffer = 0;
-        return false;
-    }
-
-    return true;
-}
-
-void Surface::doUpdate() {
-    if (postBuffer()) {
-#ifdef QT_COMPOSITOR_QUICK
-        QWaylandSurfaceItem *surfaceItem = waylandSurface()->surfaceItem();
-        if (surfaceItem)
-            surfaceItem->setDamagedFlag(true); // avoid flicker when we switch back to composited mode
-#endif
-        sendFrameCallback();
-    } else {
-        SurfaceBuffer *surfaceBuffer = currentSurfaceBuffer();
-
-        if (surfaceBuffer) {
-            if (surfaceBuffer->damageRect().isValid()) {
-                m_compositor->markSurfaceAsDirty(this);
-                emit m_waylandSurface->damaged(surfaceBuffer->damageRect());
-            }
-        }
+        InputDevice *inputDevice = m_compositor->defaultInputDevice();
+        if (inputDevice->keyboardFocus() == this)
+            inputDevice->setKeyboardFocus(0);
+        if (inputDevice->mouseFocus() == this)
+            inputDevice->setMouseFocus(0, QPointF(), QPointF());
     }
 }
 
@@ -374,29 +355,10 @@ SurfaceBuffer *Surface::createSurfaceBuffer(struct ::wl_resource *buffer)
         }
     }
 
-    Q_ASSERT(newBuffer);
-    return newBuffer;
-}
+    if (!newBuffer)
+        qWarning("SurfaceBuffer: exhausted buffer pool");
 
-bool Surface::postBuffer() {
-#ifdef QT_COMPOSITOR_WAYLAND_GL
-    if (m_waylandSurface->handle() == m_compositor->directRenderSurface()) {
-        SurfaceBuffer *surfaceBuffer = currentSurfaceBuffer();
-        if (surfaceBuffer && surfaceBuffer->waylandBufferHandle()) {
-            if (m_compositor->pageFlipper()) {
-                if (m_compositor->pageFlipper()->displayBuffer(surfaceBuffer)) {
-                    surfaceBuffer->setPageFlipperHasBuffer(true);
-                    m_compositor->setDirectRenderingActive(true);
-                    return true;
-                } else {
-                    if (QT_WAYLAND_PRINT_BUFFERING_WARNINGS)
-                        qWarning() << "could not post buffer";
-                }
-            }
-        }
-    }
-#endif
-    return false;
+    return newBuffer;
 }
 
 void Surface::attach(struct ::wl_resource *buffer)
@@ -416,14 +378,6 @@ void Surface::attach(struct ::wl_resource *buffer)
 
     SurfaceBuffer *surfBuf = createSurfaceBuffer(buffer);
     m_bufferQueue << surfBuf;
-
-    if (!buffer) {
-        InputDevice *inputDevice = m_compositor->defaultInputDevice();
-        if (inputDevice->keyboardFocus() == this)
-            inputDevice->setKeyboardFocus(0);
-        if (inputDevice->mouseFocus() == this)
-            inputDevice->setMouseFocus(0, QPointF(), QPointF());
-    }
 }
 
 void Surface::damage(const QRect &rect)
@@ -444,7 +398,7 @@ void Surface::damage(const QRect &rect)
     }
 }
 
-void Surface::surface_destroy_resource(Resource *)
+void Surface::surface_destroy_resource(Resource *r)
 {
     compositor()->surfaceDestroyed(this);
     delete this;
@@ -492,27 +446,21 @@ void Surface::surface_commit(Resource *)
         return;
     }
 
-    if (!wl_list_empty(&m_pending_frame_callback_list))
-        m_compositor->markSurfaceAsDirty(this);
-
-    if (!wl_list_empty(&m_frame_callback_list))
-            qWarning("Previous callbacks not sent yet, client is not waiting for callbacks?");
-
-    wl_list_insert_list(&m_frame_callback_list, &m_pending_frame_callback_list);
-    wl_list_init(&m_pending_frame_callback_list);
-
     SurfaceBuffer *surfaceBuffer = m_bufferQueue.last();
-    if (surfaceBuffer) {
-        if (surfaceBuffer->isComitted()) {
-            if (QT_WAYLAND_PRINT_BUFFERING_WARNINGS)
-                qWarning("Committing buffer that has already been committed");
-        } else {
-            surfaceBuffer->setCommitted();
-        }
-        advanceBufferQueue();
+    if (surfaceBuffer->isComitted()) {
+        if (QT_WAYLAND_PRINT_BUFFERING_WARNINGS)
+            qWarning("Committing buffer that has already been committed");
+    } else {
+        surfaceBuffer->setCommitted();
     }
 
-    doUpdate();
+    // A new buffer was added to the queue, so we set it as the current
+    // back buffer. Second and third buffers, if the come, will be handled
+    // in advanceBufferQueue().
+    if (!m_backBuffer && m_bufferQueue.size() == 1) {
+        setBackBuffer(surfaceBuffer);
+        m_bufferQueue.takeFirst();
+    }
 }
 
 void Surface::setClassName(const QString &className)

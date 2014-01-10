@@ -385,6 +385,7 @@ QSGNode *QWaylandSurfaceItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeD
         return 0;
     }
 
+    surface()->handle()->advanceBufferQueue();
     updateTexture();
     if (!m_provider->t || !m_paintEnabled) {
         delete oldNode;
