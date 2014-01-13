@@ -39,7 +39,7 @@
 ****************************************************************************/
 
 #include <xkbcommon/xkbcommon.h>
-#include <X11/keysym.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 #include <string.h>
 
