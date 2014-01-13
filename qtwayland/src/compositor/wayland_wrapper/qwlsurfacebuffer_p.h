@@ -124,7 +124,6 @@ private:
     bool m_is_displayed;
 #ifdef QT_COMPOSITOR_WAYLAND_GL
     GLuint m_texture;
-    QOpenGLSharedResourceGuard *m_guard;
 #else
     uint m_texture;
     uint m_guard;
