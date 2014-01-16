@@ -122,7 +122,8 @@ QWaylandIntegration::QWaylandIntegration()
     foreach (QPlatformScreen *screen, mDisplay->screens())
         screenAdded(screen);
 
-    mInputContext.reset(new QWaylandInputContext(mDisplay));
+    //mInputContext.reset(new QWaylandInputContext(mDisplay));
+    mInputContext.reset(QPlatformInputContextFactory::create());
 }
 
 QWaylandIntegration::~QWaylandIntegration()
