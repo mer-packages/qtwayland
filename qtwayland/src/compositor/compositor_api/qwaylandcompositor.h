@@ -114,6 +114,8 @@ public:
     void enableSubSurfaceExtension();
 
     void enableTouchExtension();
+    void cleanupGraphicsResources();
+
     enum TouchExtensionFlag {
         TouchExtMouseFromTouch = 0x01
     };

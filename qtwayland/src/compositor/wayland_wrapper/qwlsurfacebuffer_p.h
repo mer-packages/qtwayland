@@ -43,7 +43,6 @@
 
 #include <QtCore/QRect>
 #include <QtGui/qopengl.h>
-#include <QtGui/private/qopenglcontext_p.h>
 #include <qpa/qplatformscreenpageflipper.h>
 #include <QImage>
 
@@ -85,7 +84,6 @@ public:
     void setPageFlipperHasBuffer(bool owns);
     bool pageFlipperHasBuffer() const { return m_page_flipper_has_buffer; }
     void release();
-    void scheduledRelease();
     void disown();
 
     void setDisplayed();
@@ -108,6 +106,8 @@ public:
     void handleAboutToBeDisplayed();
     void handleDisplayed();
 
+    void bufferWasDestroyed();
+
     void *handle() const;
     QImage image();
 private:
@@ -124,10 +124,8 @@ private:
     bool m_is_displayed;
 #ifdef QT_COMPOSITOR_WAYLAND_GL
     GLuint m_texture;
-    QOpenGLSharedResourceGuard *m_guard;
 #else
     uint m_texture;
-    uint m_guard;
 #endif
     void *m_handle;
     mutable bool m_is_shm_resolved;
