@@ -189,6 +189,8 @@ protected:
     QWaylandWindowConfigure mConfigure;
     bool mRequestResizeSent;
     bool mCanResize;
+    bool mResizeDirty;
+    bool mResizeAfterSwap;
 
     bool mSentInitialResize;
     QPoint mOffset;
