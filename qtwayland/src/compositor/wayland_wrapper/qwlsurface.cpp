@@ -85,8 +85,6 @@ Surface::Surface(struct wl_client *client, uint32_t id, Compositor *compositor)
     , m_shellSurface(0)
     , m_transientInactive(false)
     , m_isCursorSurface(false)
-    , m_textureIdBufferNeedsDisown(false)
-    , m_textureIdBuffer(0)
 {
     wl_list_init(&m_frame_callback_list);
     wl_list_init(&m_pending_frame_callback_list);
@@ -212,14 +210,6 @@ GLuint Surface::textureId(QOpenGLContext *context) const
         QWaylandGraphicsHardwareIntegration *hwIntegration = m_compositor->graphicsHWIntegration();
         const_cast<SurfaceBuffer *>(surfacebuffer)->createTexture(hwIntegration,context);
     }
-
-    if (m_textureIdBufferNeedsDisown) {
-        Q_ASSERT(m_textureIdBuffer);
-        const_cast<SurfaceBuffer *>(m_textureIdBuffer)->disown();
-        m_textureIdBufferNeedsDisown = false;
-    }
-    m_textureIdBuffer = surfacebuffer;
-
     return surfacebuffer->texture();
 }
 #endif // QT_COMPOSITOR_WAYLAND_GL
@@ -231,17 +221,8 @@ void Surface::sendFrameCallback()
         surfaceBuffer->setDisplayed();
 
     if (m_backBuffer) {
-        if (m_frontBuffer) {
-#ifdef QT_COMPOSITOR_WAYLAND_GL
-            if (m_textureIdBuffer == m_frontBuffer) {
-                m_textureIdBufferNeedsDisown = true;
-            } else {
-#endif
-                m_frontBuffer->disown();
-#ifdef QT_COMPOSITOR_WAYLAND_GL
-            }
-#endif
-        }
+        if (m_frontBuffer)
+            m_frontBuffer->disown();
         m_frontBuffer = m_backBuffer;
     }
 

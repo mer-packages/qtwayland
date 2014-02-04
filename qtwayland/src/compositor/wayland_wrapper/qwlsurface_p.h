@@ -169,11 +169,6 @@ private:
     bool m_transientInactive;
     bool m_isCursorSurface;
 
-#ifdef QT_COMPOSITOR_WAYLAND_GL
-    mutable bool m_textureIdBufferNeedsDisown;
-    mutable const SurfaceBuffer *m_textureIdBuffer;
-#endif
-
     inline SurfaceBuffer *currentSurfaceBuffer() const;
     void damage(const QRect &rect);
     bool advanceBufferQueue();
