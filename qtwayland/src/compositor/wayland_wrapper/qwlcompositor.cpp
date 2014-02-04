@@ -106,8 +106,6 @@ void compositor_create_region(struct wl_client *client,
     new Region(client, id);
 }
 
-static bool compositor_no_throttle = false;
-
 const static struct wl_compositor_interface compositor_interface = {
     compositor_create_surface,
     compositor_create_region
@@ -171,13 +169,6 @@ Compositor::Compositor(QWaylandCompositor *qt_compositor)
 
     }
 #endif
-    // Set QT_WAYLAND_COMPOSITOR_NO_THROTTLE to send frame events to
-    // all "dirty" surfaces regardless of compositor trying to throttle
-    // non-visible client surfaces
-    QByteArray throttleEnv = qgetenv("QT_WAYLAND_COMPOSITOR_NO_THROTTLE");
-    if (!throttleEnv.isEmpty() && throttleEnv != "0" && throttleEnv != "false")
-        compositor_no_throttle = true;
-
     m_windowManagerIntegration = new WindowManagerServerIntegration(qt_compositor, this);
 
     wl_display_add_global(m_display->handle(),&wl_compositor_interface,this,Compositor::bind_func);
@@ -236,21 +227,14 @@ Compositor::~Compositor()
 
 void Compositor::frameFinished(Surface *surface)
 {
-    if (compositor_no_throttle || !surface) {
-        QSet<Surface *> dirty = m_dirty_surfaces;
-        m_dirty_surfaces.clear();
-        int numDirty = 0;
-        foreach (Surface *dirtySurface, dirty) {
-            dirtySurface->sendFrameCallback();
-            if (surface && dirtySurface != surface)
-                numDirty++;
-        }
-        if (compositor_no_throttle && numDirty) {
-            qWarning() << Q_FUNC_INFO << "not throttling" << numDirty << "surfaces";
-        }
-    } else if (surface && m_dirty_surfaces.contains(surface)) {
+    if (surface && m_dirty_surfaces.contains(surface)) {
         m_dirty_surfaces.remove(surface);
         surface->sendFrameCallback();
+    } else if (!surface) {
+        QSet<Surface *> dirty = m_dirty_surfaces;
+        m_dirty_surfaces.clear();
+        foreach (Surface *surface, dirty)
+            surface->sendFrameCallback();
     }
 }
 
