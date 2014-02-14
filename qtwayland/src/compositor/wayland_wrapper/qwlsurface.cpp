@@ -473,6 +473,16 @@ void Surface::surface_commit(Resource *)
         }
     }
 
+    if (compositor() && compositor()->window() && !compositor()->window()->isVisible()) {
+        if (m_backBuffer)
+            m_backBuffer->disown();
+        while (m_bufferQueue.size() > 1) // keep the last buffer to have something to show.
+            m_bufferQueue.takeFirst()->disown();
+        setBackBuffer(surfaceBuffer);
+        sendFrameCallback();
+        return;
+    }
+
     // A new buffer was added to the queue, so we set it as the current
     // back buffer. Second and third buffers, if the come, will be handled
     // in advanceBufferQueue().
