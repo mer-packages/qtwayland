@@ -77,6 +77,13 @@ class ShellSurface;
 class Q_COMPOSITOR_EXPORT Surface : public QtWaylandServer::wl_surface
 {
 public:
+
+    class DeleteGuard : public QEvent {
+    public:
+        DeleteGuard(Surface *s) : QEvent(User), surface(s) { }
+        Surface *surface;
+    };
+
     Surface(struct wl_client *client, uint32_t id, Compositor *compositor);
     ~Surface();
 
@@ -139,6 +146,9 @@ public:
     void advanceBufferQueue();
     void releaseSurfaces();
 
+    void enterDeleteGuard();
+    void leaveDeleteGuard();
+
 private:
     Q_DISABLE_COPY(Surface)
 
@@ -171,6 +181,9 @@ private:
     QString m_title;
     bool m_transientInactive;
     bool m_isCursorSurface;
+
+    bool m_surfaceWasDestroyed;
+    bool m_deleteGuard;
 
     inline SurfaceBuffer *currentSurfaceBuffer() const;
     void damage(const QRect &rect);
