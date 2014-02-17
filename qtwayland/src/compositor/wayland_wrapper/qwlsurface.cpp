@@ -55,6 +55,7 @@
 
 #include <QtCore/QDebug>
 #include <QTouchEvent>
+#include <QtCore/QCoreApplication>
 
 #include <wayland-server.h>
 
@@ -85,6 +86,8 @@ Surface::Surface(struct wl_client *client, uint32_t id, Compositor *compositor)
     , m_shellSurface(0)
     , m_transientInactive(false)
     , m_isCursorSurface(false)
+    , m_surfaceWasDestroyed(false)
+    , m_deleteGuard(false)
 {
     wl_list_init(&m_frame_callback_list);
     wl_list_init(&m_pending_frame_callback_list);
@@ -285,6 +288,38 @@ Compositor *Surface::compositor() const
     return m_compositor;
 }
 
+/*
+ * This little curveball is here to prevent the surface from
+ * being deleted while there are queued connections pending from
+ * QWaylandSurface which have yet to be delivered to receivers on
+ * the GUI thread.
+ *
+ * There is a slight chance that a surface_destroy_resource
+ * comes on the GUI thread and enters the GUI thread's event queue
+ * during the sync phase, before queued connections from
+ * 'sizeChanged', 'mapped' and 'unmapped' which are fired
+ * during advanceBufferQueue.
+ *
+ * The delete guard is here to delay the destruction until after
+ * these queued connections have been properly delivered. This
+ * is done by posting an event at the very end of
+ * advanceBufferQueue(). Once this has been delivered on the GUI
+ * thread, it is safe to delete again. Though ugly, the delay and
+ * overhead is minimal.
+ */
+void Surface::enterDeleteGuard()
+{
+    m_deleteGuard = true;
+    QCoreApplication::postEvent(m_compositor, new DeleteGuard(this));
+}
+
+void Surface::leaveDeleteGuard()
+{
+    if (m_surfaceWasDestroyed)
+        m_compositor->destroySurface(this);
+    m_deleteGuard = false;
+}
+
 void Surface::advanceBufferQueue()
  {
     SurfaceBuffer *front = m_frontBuffer;
@@ -312,6 +347,8 @@ void Surface::advanceBufferQueue()
     // Release the old front buffer if we changed it.
     if (front && front != m_frontBuffer)
         front->disown();
+
+    enterDeleteGuard();
 }
 
 /*!
@@ -409,7 +446,10 @@ void Surface::damage(const QRect &rect)
 
 void Surface::surface_destroy_resource(Resource *)
 {
-    compositor()->destroySurface(this);
+    if (m_deleteGuard)
+        m_surfaceWasDestroyed = true;
+    else
+        compositor()->destroySurface(this);
 }
 
 void Surface::surface_destroy(Resource *resource)

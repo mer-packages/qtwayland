@@ -317,6 +317,15 @@ void Compositor::cleanupGraphicsResources()
     m_destroyed_surfaces.clear();
 }
 
+bool Compositor::event(QEvent *e)
+{
+    if (e->type() == QEvent::User) {
+        static_cast<Surface::DeleteGuard *>(e)->surface->leaveDeleteGuard();
+        return true;
+    }
+    return QObject::event(e);
+}
+
 void Compositor::markSurfaceAsDirty(QtWayland::Surface *surface)
 {
     m_dirty_surfaces.insert(surface);
