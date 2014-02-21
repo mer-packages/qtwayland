@@ -43,6 +43,7 @@
 #include "qwaylandsurface.h"
 #ifdef QT_COMPOSITOR_QUICK
 #include "qwaylandsurfaceitem.h"
+#include <QQuickWindow>
 #endif
 
 #include "qwlcompositor_p.h"
@@ -149,11 +150,47 @@ bool Surface::isYInverted() const
     return ret != negateReturn;
 }
 
+class BufferReleaser : public QObject
+{
+public:
+    BufferReleaser(SurfaceBuffer *b) : buffer(b) { }
+    ~BufferReleaser()
+    {
+        buffer->disown();
+    }
+    SurfaceBuffer *buffer;
+};
+
+void Surface::setCompositorVisible(bool visible)
+{
+    if (!visible) {
+        while (m_bufferQueue.size())
+            m_bufferQueue.takeFirst()->disown();
+        if (m_backBuffer) {
+            m_backBuffer->disown();
+            setBackBuffer(0);
+        }
+        if (m_frontBuffer) {
+            if (type() == QWaylandSurface::Shm) {
+                m_frontBuffer->disown();
+                m_frontBuffer = 0;
+            } else {
+                BufferReleaser *bd = new BufferReleaser(m_frontBuffer);
+#ifdef QT_COMPOSITOR_QUICK
+                bd->moveToThread(qobject_cast<QQuickWindow *>(compositor()->window())->openglContext()->thread());
+#endif
+                bd->deleteLater();
+                m_frontBuffer = 0;
+            }
+        }
+    }
+}
+
 bool Surface::visible() const
 {
 
     SurfaceBuffer *surfacebuffer = currentSurfaceBuffer();
-    return surfacebuffer->waylandBufferHandle();
+    return surfacebuffer && surfacebuffer->waylandBufferHandle();
 }
 
 QPointF Surface::pos() const
@@ -519,7 +556,7 @@ void Surface::surface_commit(Resource *)
         while (m_bufferQueue.size() > 1) // keep the last buffer to have something to show.
             m_bufferQueue.takeFirst()->disown();
         setBackBuffer(surfaceBuffer);
-        sendFrameCallback();
+        m_bufferQueue.clear();
         return;
     }
 
