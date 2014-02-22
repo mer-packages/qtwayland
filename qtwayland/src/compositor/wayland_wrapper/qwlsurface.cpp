@@ -43,7 +43,6 @@
 #include "qwaylandsurface.h"
 #ifdef QT_COMPOSITOR_QUICK
 #include "qwaylandsurfaceitem.h"
-#include <QQuickWindow>
 #endif
 
 #include "qwlcompositor_p.h"
@@ -150,38 +149,41 @@ bool Surface::isYInverted() const
     return ret != negateReturn;
 }
 
-class BufferReleaser : public QObject
-{
-public:
-    BufferReleaser(SurfaceBuffer *b) : buffer(b) { }
-    ~BufferReleaser()
-    {
-        buffer->disown();
-    }
-    SurfaceBuffer *buffer;
-};
-
+/*
+ * When the compositor goes of screen, we want to release as much as
+ * possible, but we retain one buffer so we have something to
+ * represent the client when compositor comes back. This buffer is set
+ * as the backbuffer (similar to what we do in surface_commit below).
+ *
+ * For hardware buffers, we retain the front buffer because we are not
+ * on the render thread and we don't have GL to release. This applies
+ * to QtQuick only, but is generalized for simplicity. This means that
+ * a client which renders with only two hardware buffers will
+ * potentially have both those buffers in the compositor when it goes
+ * off screen and the client can thus be blocked. Qt clients use 3
+ * buffers though, so this is not a problem in practice.
+ *
+ * For SHM buffers, the memory is already bound as a texture so we can
+ * release it regardless. That means that SHM clients are ok with only
+ * 2 buffers.
+ */
 void Surface::setCompositorVisible(bool visible)
 {
     if (!visible) {
-        while (m_bufferQueue.size())
-            m_bufferQueue.takeFirst()->disown();
-        if (m_backBuffer) {
-            m_backBuffer->disown();
-            setBackBuffer(0);
+        if (m_bufferQueue.size() > 0) {
+            // If there are buffers in the queue, cycle through them
+            // and set the last one as backbuffer. Release all others.
+            if (m_backBuffer)
+                m_backBuffer->disown();
+            while (m_bufferQueue.size() > 1)
+                m_bufferQueue.takeFirst()->disown();
+            setBackBuffer(m_bufferQueue.takeLast());
+            Q_ASSERT(m_bufferQueue.isEmpty());
         }
-        if (m_frontBuffer) {
-            if (type() == QWaylandSurface::Shm) {
-                m_frontBuffer->disown();
-                m_frontBuffer = 0;
-            } else {
-                BufferReleaser *bd = new BufferReleaser(m_frontBuffer);
-#ifdef QT_COMPOSITOR_QUICK
-                bd->moveToThread(qobject_cast<QQuickWindow *>(compositor()->window())->openglContext()->thread());
-#endif
-                bd->deleteLater();
-                m_frontBuffer = 0;
-            }
+        if (m_frontBuffer && type() == QWaylandSurface::Shm) {
+            // Release front shm buffer.
+            m_frontBuffer->disown();
+            m_frontBuffer = 0;
         }
     }
 }
