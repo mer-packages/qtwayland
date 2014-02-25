@@ -86,6 +86,9 @@ Surface::Surface(struct wl_client *client, uint32_t id, Compositor *compositor)
     , m_shellSurface(0)
     , m_transientInactive(false)
     , m_isCursorSurface(false)
+    , m_visible(false)
+    , m_invertY(false)
+    , m_bufferType(QWaylandSurface::Invalid)
     , m_surfaceWasDestroyed(false)
     , m_deleteGuard(false)
 {
@@ -112,6 +115,14 @@ void Surface::releaseSurfaces()
     m_subSurface = 0;
 }
 
+void Surface::releaseFrontBuffer()
+{
+    if (m_frontBuffer && m_frontBuffer->waylandBufferHandle() && m_frontBuffer->isShmBuffer()) {
+        m_frontBuffer->disown();
+        m_frontBuffer = 0;
+    }
+}
+
 Surface *Surface::fromResource(struct ::wl_resource *resource)
 {
     return static_cast<Surface *>(Resource::fromResource(resource)->surface);
@@ -119,34 +130,13 @@ Surface *Surface::fromResource(struct ::wl_resource *resource)
 
 QWaylandSurface::Type Surface::type() const
 {
-    SurfaceBuffer *surfaceBuffer = currentSurfaceBuffer();
-    if (surfaceBuffer && surfaceBuffer->waylandBufferHandle()) {
-        if (surfaceBuffer->isShmBuffer()) {
-            return QWaylandSurface::Shm;
-        } else {
-            return QWaylandSurface::Texture;
-        }
-    }
-    return QWaylandSurface::Invalid;
+    return m_bufferType;
 }
 
 bool Surface::isYInverted() const
 {
-    bool ret = false;
     static bool negateReturn = qgetenv("QT_COMPOSITOR_NEGATE_INVERTED_Y").toInt();
-    QWaylandGraphicsHardwareIntegration *graphicsHWIntegration = m_compositor->graphicsHWIntegration();
-
-#ifdef QT_COMPOSITOR_WAYLAND_GL
-    SurfaceBuffer *surfacebuffer = currentSurfaceBuffer();
-    if (!surfacebuffer) {
-        ret = false;
-    } else if (graphicsHWIntegration && surfacebuffer->waylandBufferHandle() && type() != QWaylandSurface::Shm) {
-        ret = graphicsHWIntegration->isYInverted(surfacebuffer->waylandBufferHandle());
-    } else
-#endif
-        ret = true;
-
-    return ret != negateReturn;
+    return m_invertY != negateReturn;
 }
 
 /*
@@ -190,9 +180,7 @@ void Surface::setCompositorVisible(bool visible)
 
 bool Surface::visible() const
 {
-
-    SurfaceBuffer *surfacebuffer = currentSurfaceBuffer();
-    return surfacebuffer && surfacebuffer->waylandBufferHandle();
+    return m_visible;
 }
 
 QPointF Surface::pos() const
@@ -243,10 +231,8 @@ QRegion Surface::opaqueRegion() const
 
 QImage Surface::image() const
 {
-    SurfaceBuffer *surfacebuffer = currentSurfaceBuffer();
-    if (surfacebuffer && !surfacebuffer->isDestroyed() && type() == QWaylandSurface::Shm) {
-        return surfacebuffer->image();
-    }
+    if (m_frontBuffer && !m_frontBuffer->isDestroyed() && m_bufferType == QWaylandSurface::Shm)
+        return m_frontBuffer->image();
     return QImage();
 }
 
@@ -402,13 +388,17 @@ void Surface::setBackBuffer(SurfaceBuffer *buffer)
     m_backBuffer = buffer;
 
     if (m_backBuffer) {
-        bool valid = m_backBuffer->waylandBufferHandle() != 0;
-        setSize(valid ? m_backBuffer->size() : QSize());
+        m_visible = m_backBuffer->waylandBufferHandle() != 0;
+        QWaylandGraphicsHardwareIntegration *hwi = m_compositor->graphicsHWIntegration();
+        m_invertY = m_visible && (buffer->isShmBuffer() || (hwi && hwi->isYInverted(buffer->waylandBufferHandle())));
+        m_bufferType = m_visible ? (buffer->isShmBuffer() ? QWaylandSurface::Shm : QWaylandSurface::Texture) : QWaylandSurface::Invalid;
+
+        setSize(m_visible ? m_backBuffer->size() : QSize());
 
         if ((!m_subSurface || !m_subSurface->parent()) && !m_surfaceMapped) {
              m_surfaceMapped = true;
              emit m_waylandSurface->mapped();
-        } else if (!valid && m_surfaceMapped) {
+        } else if (!m_visible && m_surfaceMapped) {
              m_surfaceMapped = false;
              emit m_waylandSurface->unmapped();
         }
@@ -416,6 +406,10 @@ void Surface::setBackBuffer(SurfaceBuffer *buffer)
         m_compositor->markSurfaceAsDirty(this);
         emit m_waylandSurface->damaged(m_backBuffer->damageRect());
     } else {
+        m_visible = false;
+        m_invertY = false;
+        m_bufferType = QWaylandSurface::Invalid;
+
         InputDevice *inputDevice = m_compositor->defaultInputDevice();
         if (inputDevice->keyboardFocus() == this)
             inputDevice->setKeyboardFocus(0);
