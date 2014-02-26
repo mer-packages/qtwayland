@@ -479,6 +479,11 @@ void Surface::damage(const QRect &rect)
 
 void Surface::surface_destroy_resource(Resource *)
 {
+    if (m_extendedSurface) {
+        if (m_extendedSurface->resource())
+            wl_resource_destroy(m_extendedSurface->resource()->handle);
+        m_extendedSurface = 0;
+    }
     if (m_deleteGuard)
         m_surfaceWasDestroyed = true;
     else
