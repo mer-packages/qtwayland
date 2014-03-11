@@ -93,6 +93,9 @@ Pointer::Pointer(Compositor *compositor, InputDevice *seat)
     , m_currentPoint()
     , m_buttonCount()
 {
+    m_focusDestroyListener.parent = this;
+    m_focusDestroyListener.listener.notify = focusDestroyed;
+    wl_list_init(&m_focusDestroyListener.listener.link);
 }
 
 void Pointer::setFocus(Surface *surface, const QPointF &position)
@@ -100,6 +103,8 @@ void Pointer::setFocus(Surface *surface, const QPointF &position)
     if (m_focusResource && m_focus != surface) {
         uint32_t serial = wl_display_next_serial(m_compositor->wl_display());
         send_leave(m_focusResource->handle, serial, m_focus->resource()->handle);
+        wl_list_remove(&m_focusDestroyListener.listener.link);
+        wl_list_init(&m_focusDestroyListener.listener.link);
     }
 
     Resource *resource = surface ? resourceMap().value(surface->resource()->client()) : 0;
@@ -114,10 +119,24 @@ void Pointer::setFocus(Surface *surface, const QPointF &position)
         }
         send_enter(resource->handle, serial, surface->resource()->handle,
                    wl_fixed_from_double(position.x()), wl_fixed_from_double(position.y()));
+
+        wl_signal_add(&surface->resource()->handle->destroy_signal, &m_focusDestroyListener.listener);
     }
 
     m_focusResource = resource;
     m_focus = surface;
+}
+
+void Pointer::focusDestroyed(wl_listener *listener, void *data)
+{
+    Q_UNUSED(data)
+    Pointer *pointer = reinterpret_cast<Listener *>(listener)->parent;
+    wl_list_remove(&pointer->m_focusDestroyListener.listener.link);
+    wl_list_init(&pointer->m_focusDestroyListener.listener.link);
+
+    pointer->m_focus = 0;
+    pointer->m_focusResource = 0;
+    pointer->setMouseFocus(0, QPointF(), QPointF());
 }
 
 void Pointer::startGrab(PointerGrabber *grab)

@@ -91,6 +91,7 @@ Surface::Surface(struct wl_client *client, uint32_t id, Compositor *compositor)
     , m_bufferType(QWaylandSurface::Invalid)
     , m_surfaceWasDestroyed(false)
     , m_deleteGuard(false)
+    , m_destroyed(false)
 {
     wl_list_init(&m_frame_callback_list);
     wl_list_init(&m_pending_frame_callback_list);
@@ -479,6 +480,7 @@ void Surface::damage(const QRect &rect)
 
 void Surface::surface_destroy_resource(Resource *)
 {
+    m_destroyed = true;
     if (m_extendedSurface) {
         if (m_extendedSurface->resource())
             wl_resource_destroy(m_extendedSurface->resource()->handle);

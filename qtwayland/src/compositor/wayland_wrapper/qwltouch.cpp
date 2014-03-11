@@ -52,13 +52,33 @@ Touch::Touch(Compositor *compositor)
     , m_focus()
     , m_focusResource()
 {
+    m_focusDestroyListener.parent = this;
+    m_focusDestroyListener.listener.notify = focusDestroyed;
+    wl_list_init(&m_focusDestroyListener.listener.link);
 }
 
 void Touch::setFocus(Surface *surface)
 {
+    wl_list_remove(&m_focusDestroyListener.listener.link);
+    wl_list_init(&m_focusDestroyListener.listener.link);
+    if (surface)
+        wl_signal_add(&surface->resource()->handle->destroy_signal, &m_focusDestroyListener.listener);
+
     m_focus = surface;
     m_focusResource = surface ? resourceMap().value(surface->resource()->client()) : 0;
 }
+
+void Touch::focusDestroyed(wl_listener *listener, void *data)
+{
+    Q_UNUSED(data)
+    Touch *touch = reinterpret_cast<Listener *>(listener)->parent;
+    wl_list_remove(&touch->m_focusDestroyListener.listener.link);
+    wl_list_init(&touch->m_focusDestroyListener.listener.link);
+
+    touch->m_focus = 0;
+    touch->m_focusResource = 0;
+}
+
 
 void Touch::sendCancel()
 {
