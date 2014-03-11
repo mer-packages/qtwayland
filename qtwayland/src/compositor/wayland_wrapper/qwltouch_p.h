@@ -68,10 +68,18 @@ public:
     void sendUp(int touch_id);
 
 private:
+    static void focusDestroyed(wl_listener *listener, void *data);
+
     Compositor *m_compositor;
 
     Surface *m_focus;
     Resource *m_focusResource;
+    struct Listener
+    {
+        wl_listener listener;
+        Touch *parent;
+    };
+    Listener m_focusDestroyListener;
 };
 
 } // namespace QtWayland
