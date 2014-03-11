@@ -150,6 +150,7 @@ public:
 
     void enterDeleteGuard();
     void leaveDeleteGuard();
+    inline bool isDestroyed() const { return m_destroyed; }
 
     void setCompositorVisible(bool visible);
 
@@ -192,6 +193,7 @@ private:
 
     bool m_surfaceWasDestroyed;
     bool m_deleteGuard;
+    bool m_destroyed;
 
     void damage(const QRect &rect);
     void setBackBuffer(SurfaceBuffer *buffer);
