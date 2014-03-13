@@ -69,6 +69,9 @@ public:
 
     void bindContentFBO();
 
+    bool needsSwap() { return m_needsSwap; }
+    void wasSwapped();
+
 private:
     QWaylandEglIntegration *m_eglIntegration;
     mutable struct wl_egl_window *m_waylandEglWindow;
@@ -81,6 +84,7 @@ private:
     mutable bool m_resize;
 
     QSurfaceFormat m_format;
+    bool m_needsSwap;
 };
 
 QT_END_NAMESPACE

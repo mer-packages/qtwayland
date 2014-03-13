@@ -13,6 +13,10 @@ OTHER_FILES += \
     LIBS += -lwayland-egl -lEGL
 }
 
+contains(CONFIG, egl-resize-swap) {
+    DEFINES += EGL_RESIZE_SWAP
+}
+
 SOURCES += qwaylandeglintegration.cpp \
            qwaylandglcontext.cpp \
            qwaylandeglwindow.cpp \

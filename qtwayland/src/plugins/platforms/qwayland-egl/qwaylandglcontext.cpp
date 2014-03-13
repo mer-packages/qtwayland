@@ -103,6 +103,13 @@ bool QWaylandGLContext::makeCurrent(QPlatformSurface *surface)
 
     window->bindContentFBO();
 
+    /* We might need to do an extra swap to correctly handle surface resizes */
+    if (window->needsSwap()) {
+        QPlatformSurface *surface = static_cast<QPlatformSurface *>(window);
+        swapBuffers(surface);
+        window->wasSwapped();
+    }
+
     return true;
 }
 
