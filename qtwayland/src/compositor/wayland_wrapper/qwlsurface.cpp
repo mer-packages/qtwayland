@@ -176,6 +176,7 @@ void Surface::setCompositorVisible(bool visible)
             m_frontBuffer->disown();
             m_frontBuffer = 0;
         }
+        sendFrameCallback();
     }
 }
 
@@ -560,6 +561,7 @@ void Surface::surface_commit(Resource *)
             m_bufferQueue.takeFirst()->disown();
         setBackBuffer(surfaceBuffer);
         m_bufferQueue.clear();
+        sendFrameCallback();
         return;
     }
 
