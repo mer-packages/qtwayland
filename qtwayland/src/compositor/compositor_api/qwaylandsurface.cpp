@@ -226,6 +226,10 @@ void QWaylandSurface::setSurfaceItem(QWaylandSurfaceItem *surfaceItem)
 
 qint64 QWaylandSurface::processId() const
 {
+    Q_D(const QWaylandSurface);
+    if (d->surface->isDestroyed())
+        return -1;
+
     struct wl_client *client = static_cast<struct wl_client *>(this->client());
     pid_t pid;
     wl_client_get_credentials(client,&pid, 0,0);
