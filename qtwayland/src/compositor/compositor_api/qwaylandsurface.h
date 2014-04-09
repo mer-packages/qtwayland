@@ -145,7 +145,7 @@ public:
 
     qint64 processId() const;
     QByteArray authenticationToken() const;
-    QVariantMap windowProperties() const;
+    Q_INVOKABLE QVariantMap windowProperties() const;
     void setWindowProperty(const QString &name, const QVariant &value);
 
     QPointF mapToParent(const QPointF &) const;
