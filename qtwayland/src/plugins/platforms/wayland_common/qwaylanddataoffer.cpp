@@ -41,6 +41,7 @@
 
 #include "qwaylanddataoffer.h"
 #include "qwaylanddatadevicemanager.h"
+#include "qwaylanddisplay.h"
 
 #include <QtGui/private/qguiapplication_p.h>
 #include <qpa/qplatformclipboard.h>

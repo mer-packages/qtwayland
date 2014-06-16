@@ -42,11 +42,15 @@
 #ifndef QWAYLANDDATASOURCE_H
 #define QWAYLANDDATASOURCE_H
 
-#include "qwaylanddatadevicemanager.h"
+#include <qglobal.h>
 
 #include <wayland-client-protocol.h>
 
 QT_BEGIN_NAMESPACE
+
+class QMimeData;
+class QWaylandDisplay;
+class QWaylandDataDeviceManager;
 
 class QWaylandDataSource
 {

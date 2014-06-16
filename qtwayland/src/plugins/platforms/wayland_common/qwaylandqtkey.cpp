@@ -41,6 +41,7 @@
 
 #include "qwaylandqtkey.h"
 #include "qwaylandinputdevice.h"
+#include "qwaylanddisplay.h"
 
 QT_BEGIN_NAMESPACE
 

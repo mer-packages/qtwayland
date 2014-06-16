@@ -41,6 +41,7 @@
 
 #include "qwaylanddnd.h"
 
+#include "qwaylanddisplay.h"
 #include "qwaylanddatadevicemanager.h"
 
 QT_BEGIN_NAMESPACE

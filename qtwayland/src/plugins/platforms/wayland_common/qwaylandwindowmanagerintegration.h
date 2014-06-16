@@ -46,7 +46,6 @@
 #include <QtCore/QScopedPointer>
 
 #include "wayland-client.h"
-#include "qwaylanddisplay.h"
 #include <private/qgenericunixservices_p.h>
 
 #include "qwayland-windowmanager.h"
@@ -54,6 +53,7 @@
 QT_BEGIN_NAMESPACE
 
 class QWaylandWindow;
+class QWaylandDisplay;
 
 class QWaylandWindowManagerIntegrationPrivate;
 

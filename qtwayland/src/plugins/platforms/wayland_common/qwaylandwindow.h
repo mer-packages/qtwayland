@@ -48,8 +48,6 @@
 
 #include <qpa/qplatformwindow.h>
 
-#include "qwaylanddisplay.h"
-
 #include "qwayland-wayland.h"
 
 struct wl_egl_window;
@@ -62,6 +60,8 @@ class QWaylandShellSurface;
 class QWaylandExtendedSurface;
 class QWaylandSubSurface;
 class QWaylandDecoration;
+class QWaylandInputDevice;
+class QWaylandScreen;
 
 class QWaylandWindowConfigure
 {
