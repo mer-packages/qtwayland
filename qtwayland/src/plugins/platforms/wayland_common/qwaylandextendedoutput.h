@@ -42,11 +42,12 @@
 #ifndef QWAYLANDEXTENDEDOUTPUT_H
 #define QWAYLANDEXTENDEDOUTPUT_H
 
-#include "qwaylanddisplay.h"
 #include "qwayland-output-extension.h"
 
 QT_BEGIN_NAMESPACE
 
+class QWaylandDisplay;
+class QWaylandScreen;
 class QWaylandExtendedOutput;
 
 class QWaylandExtendedOutput : public QtWayland::qt_extended_output

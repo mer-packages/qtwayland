@@ -46,6 +46,7 @@
 #include "qwaylandintegration.h"
 #include "qwaylanddisplay.h"
 #include "qwaylandwindowmanagerintegration.h"
+#include "qwaylandscreen.h"
 #include <QtGui/private/qguiapplication_p.h>
 #include <QtGui/QScreen>
 

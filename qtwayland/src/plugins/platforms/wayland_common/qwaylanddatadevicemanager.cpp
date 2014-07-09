@@ -45,6 +45,7 @@
 #include "qwaylanddataoffer.h"
 #include "qwaylanddatasource.h"
 #include "qwaylandshmbackingstore.h"
+#include "qwaylanddisplay.h"
 
 #include <wayland-client-protocol.h>
 #include <wayland-client.h>

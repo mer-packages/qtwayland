@@ -42,13 +42,13 @@
 #ifndef QWAYLANDNATIVEINTERFACE_H
 #define QWAYLANDNATIVEINTERFACE_H
 
-#include "qwaylandscreen.h"
 #include <QVariantMap>
 #include <qpa/qplatformnativeinterface.h>
 
 QT_BEGIN_NAMESPACE
 
 class QWaylandIntegration;
+class QWaylandScreen;
 
 class QWaylandNativeInterface : public QPlatformNativeInterface
 {

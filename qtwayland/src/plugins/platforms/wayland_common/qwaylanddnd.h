@@ -45,9 +45,10 @@
 #include <qpa/qplatformdrag.h>
 #include <QtGui/QDrag>
 #include <QtCore/QMimeData>
-#include "qwaylanddisplay.h"
 
 QT_BEGIN_NAMESPACE
+
+class QWaylandDisplay;
 
 class QWaylandDrag : public QPlatformDrag
 {

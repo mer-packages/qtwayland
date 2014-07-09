@@ -42,6 +42,7 @@
 #include "qwaylandwindowmanagerintegration.h"
 #include "qwaylandscreen.h"
 #include "qwaylandwindow.h"
+#include "qwaylanddisplay.h"
 
 #include <stdint.h>
 #include <QtCore/QEvent>

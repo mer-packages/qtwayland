@@ -42,20 +42,23 @@
 #ifndef QWAYLANDDATADEVICEMANAGER_H
 #define QWAYLANDDATADEVICEMANAGER_H
 
-#include "qwaylanddisplay.h"
-
 #include <QtCore/QMap>
 #include <QtCore/QMimeData>
 #include <QtCore/QStringList>
 #include <QtGui/QClipboard>
+#include <QtCore/QPoint>
+
+#include <wayland-client.h>
 
 QT_BEGIN_NAMESPACE
 
+class QWaylandDisplay;
 class QWaylandDataOffer;
 class QWaylandDataSource;
 class QDrag;
 class QWaylandShmBuffer;
 class QWaylandWindow;
+class QWaylandInputDevice;
 
 class QWaylandDataDeviceManager
 {

@@ -43,6 +43,7 @@
 #include "qwaylanddataoffer.h"
 #include "qwaylandinputdevice.h"
 #include "qwaylandmimehelper.h"
+#include "qwaylanddatadevicemanager.h"
 
 #include <QtCore/QFile>
 
