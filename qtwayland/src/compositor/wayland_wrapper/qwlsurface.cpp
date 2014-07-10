@@ -182,7 +182,7 @@ void Surface::setCompositorVisible(bool visible)
 
 bool Surface::visible() const
 {
-    return m_visible;
+    return m_backBuffer && m_backBuffer->waylandBufferHandle();
 }
 
 QPointF Surface::pos() const
